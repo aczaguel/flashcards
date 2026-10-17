@@ -1,0 +1,506 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "operations-troubleshooting",
+    "order": 8,
+    "name": "Operaciones y Troubleshooting",
+    "description": "Import declarativo e imperativo, logging, debugging, -target, -replace y mantenimiento del state",
+    "estimatedMinutes": 55
+  },
+  "flashcards": [
+    {
+      "id": "operations-troubleshooting-001",
+      "question": "¿Qué hace `terraform import` (forma imperativa)?",
+      "answer": "Importa al state de Terraform un recurso existente en el proveedor que no fue creado por Terraform. Requiere que el bloque `resource` ya exista en la configuración.",
+      "explanation": "Sintaxis: `terraform import aws_instance.web i-1234567890`. Limitaciones: no genera la configuración HCL automáticamente (debes escribirla manualmente antes), y puede necesitar ajuste del state después. Desde Terraform 1.5+, el bloque import {} es preferible.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-002",
+      "question": "¿Qué es el bloque `import {}` declarativo (Terraform 1.5+)?",
+      "answer": "Un bloque HCL que declara qué recurso existente debe importarse al state. Se escribe en la configuración junto al recurso y se aplica con `terraform apply`. Es reproducible y revisable.",
+      "explanation": "Sintaxis: `import { to = aws_instance.web id = \"i-1234567890\" }`. Ventajas sobre `terraform import` imperativo: queda en el código, puede revisarse en PR, es reproducible. Se puede combinar con `-generate-config-out` para generar la configuración.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-003",
+      "question": "¿Qué hace `terraform plan -generate-config-out=generated.tf`?",
+      "answer": "Genera automáticamente la configuración HCL para los recursos declarados en bloques `import {}`, escribiéndola en el archivo especificado.",
+      "explanation": "Disponible desde Terraform 1.5 (experimental) y estable en 1.6+. Flujo: (1) declarar import{} con el ID del recurso, (2) ejecutar plan -generate-config-out=generated.tf, (3) revisar y ajustar el archivo generado, (4) terraform apply. Elimina la necesidad de escribir la configuración manualmente.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-004",
+      "question": "¿Cuáles son los niveles de `TF_LOG` en Terraform?",
+      "answer": "`TRACE` (más detallado), `DEBUG`, `INFO`, `WARN`, `ERROR`. `TRACE` es el más verboso e incluye todas las llamadas a la API del provider.",
+      "explanation": "Para habilitar: `export TF_LOG=DEBUG`. Para guardar en archivo: `export TF_LOG_PATH=./terraform.log`. Variables adicionales: `TF_LOG_CORE` (solo el núcleo de Terraform) y `TF_LOG_PROVIDER` (solo el provider). Sin configurar TF_LOG, no se generan logs de debug.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "debugging", "logs"]
+    },
+    {
+      "id": "operations-troubleshooting-005",
+      "question": "¿Para qué sirve `TF_LOG_PATH`?",
+      "answer": "Define la ruta del archivo donde se guardan los logs de Terraform (controlados por TF_LOG). Si no se define, los logs van a stderr.",
+      "explanation": "`export TF_LOG_PATH=./terraform.log` redirige los logs al archivo. Útil para analizar logs en CI/CD sin contaminar la salida estándar. Si el archivo no existe, Terraform lo crea. Si existe, los logs se añaden al final.",
+      "difficulty": "basic",
+      "tags": ["cert", "debugging", "logs"]
+    },
+    {
+      "id": "operations-troubleshooting-006",
+      "question": "¿Qué hace el flag `-target=resource` en `terraform plan` y `terraform apply`?",
+      "answer": "Limita la operación al recurso especificado y sus dependencias. Solo planifica/aplica los cambios de ese recurso, ignorando el resto de la configuración.",
+      "explanation": "Uso: `terraform apply -target=aws_instance.web`. Advertencia: -target no es para uso normal. Puede dejar el state inconsistente si los recursos dependientes no se actualizan. Solo para operaciones de emergencia o pruebas específicas.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "comandos", "target"]
+    },
+    {
+      "id": "operations-troubleshooting-007",
+      "question": "¿Cuándo está justificado usar `-target` en Terraform?",
+      "answer": "En operaciones de emergencia cuando solo necesitas actualizar un recurso específico urgentemente, o para depurar un recurso en aislamiento. NO para flujo normal de trabajo.",
+      "explanation": "El uso habitual de -target genera inconsistencias: el state puede quedar con partes desactualizadas. HashiCorp recomienda no usarlo para flujo normal. Después de usar -target, ejecutar terraform plan sin -target para verificar el estado completo.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "comandos", "target"]
+    },
+    {
+      "id": "operations-troubleshooting-008",
+      "question": "¿Qué hace el flag `-replace=resource` en `terraform apply`?",
+      "answer": "Fuerza la destrucción y recreación de un recurso específico, aunque no tenga cambios de configuración. Reemplaza al deprecado `terraform taint`.",
+      "explanation": "Uso: `terraform apply -replace=aws_instance.web`. Muestra en el plan el recurso con `-/+`. Útil cuando un recurso está en estado corrupto o necesita renovarse (ej: regenerar un certificado, reiniciar con nueva configuración de user_data).",
+      "difficulty": "intermediate",
+      "tags": ["cert", "comandos", "replace"]
+    },
+    {
+      "id": "operations-troubleshooting-009",
+      "question": "¿Por qué está deprecado `terraform taint`?",
+      "answer": "Porque modificaba el state directamente para marcar un recurso como 'tainted', requiriendo un apply posterior para recrearlo. Es menos seguro y transparente que `-replace`.",
+      "explanation": "`terraform apply -replace=recurso` hace lo mismo en un solo paso, muestra el efecto en el plan previo, no modifica el state directamente, y sigue el flujo estándar plan/apply. `terraform taint` sigue funcionando pero está deprecado.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "deprecated", "comandos"]
+    },
+    {
+      "id": "operations-troubleshooting-010",
+      "question": "¿Qué hace `terraform show`?",
+      "answer": "Muestra en formato legible el contenido del state actual (`terraform.tfstate`) o de un plan guardado. Con `-json` produce salida JSON estructurada.",
+      "explanation": "`terraform show` → state actual en formato HCL-like. `terraform show planfile` → contenido del plan guardado. `terraform show -json` → JSON del state. Útil para inspeccionarlo sin editar manualmente el .tfstate.",
+      "difficulty": "basic",
+      "tags": ["cert", "comandos", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-011",
+      "question": "¿Qué diferencia hay entre `terraform show` y `terraform state show`?",
+      "answer": "`terraform show` muestra el state completo o un plan file. `terraform state show recurso` muestra los atributos de un recurso específico del state.",
+      "explanation": "`terraform show` es para visión general. `terraform state show aws_instance.web` da los detalles de esa instancia específica (ID, IP, AMI, etc.). Para ver un recurso específico, `state show` es más preciso.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "comandos", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-012",
+      "question": "¿Qué hace `terraform output` sin argumentos?",
+      "answer": "Muestra todos los outputs declarados en la configuración y sus valores actuales (desde el state). Oculta los valores sensitive.",
+      "explanation": "`terraform output` → todos los outputs. `terraform output nombre` → solo ese output. `terraform output -json` → todos en formato JSON (muestra sensitive). `terraform output -raw nombre` → valor sin comillas ni formato.",
+      "difficulty": "basic",
+      "tags": ["cert", "comandos", "output"]
+    },
+    {
+      "id": "operations-troubleshooting-013",
+      "question": "¿Para qué sirve `terraform console`?",
+      "answer": "REPL interactivo para evaluar expresiones HCL, funciones built-in y referencias a recursos del state actual. Útil para depurar expresiones antes de incluirlas en la configuración.",
+      "explanation": "Ejemplo en la consola: escribir `length(var.subnets)` para ver cuántas subnets hay, o `aws_instance.web.public_ip` para ver la IP de una instancia. Se cierra con Ctrl+D o exit.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "comandos", "debugging"]
+    },
+    {
+      "id": "operations-troubleshooting-014",
+      "question": "¿Qué hace `terraform version`?",
+      "answer": "Muestra la versión de Terraform CLI instalada y las versiones de los providers activos en el directorio de trabajo. Con `-json` produce salida estructurada.",
+      "explanation": "Útil en CI/CD para verificar la versión antes de ejecutar. En la salida también aparecen las versiones de los providers y si hay una versión más nueva de Terraform disponible.",
+      "difficulty": "basic",
+      "tags": ["cert", "comandos"]
+    },
+    {
+      "id": "operations-troubleshooting-015",
+      "question": "¿Cómo funciona `terraform graph`?",
+      "answer": "Genera la representación del grafo de dependencias en formato DOT (Graphviz). Se puede visualizar con `terraform graph | dot -Tsvg > graph.svg`.",
+      "explanation": "Muestra el orden en que Terraform planea crear/actualizar los recursos y las dependencias entre ellos. Útil para depurar dependencias circulares o entender una configuración compleja.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "comandos", "debugging"]
+    },
+    {
+      "id": "operations-troubleshooting-016",
+      "question": "¿Qué es un 'cycle error' en Terraform y cómo se resuelve?",
+      "answer": "Un error de dependencia circular: el recurso A depende de B, B depende de C y C depende de A. Terraform no puede determinar el orden de creación y falla con error durante el plan.",
+      "explanation": "La resolución requiere refactorizar la configuración para eliminar la dependencia circular. Puede implicar usar data sources, separar recursos en módulos independientes o rediseñar la arquitectura.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "debugging", "dependencias"]
+    },
+    {
+      "id": "operations-troubleshooting-017",
+      "question": "¿Cómo se diferencia un error de configuración de Terraform de un error del provider?",
+      "answer": "Error de configuración: Terraform falla durante validate o al procesar el plan, con mensajes sobre HCL, tipos, referencias rotas. Error del provider: Terraform inicia la operación pero el provider devuelve un error de la API.",
+      "explanation": "Error de config: 'Error: Invalid reference', 'Error: Missing required argument'. Error del provider: 'Error creating AWS instance: InvalidParameterValue'. Los errores del provider suelen incluir el código de error de la API y son más específicos del servicio.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "debugging"]
+    },
+    {
+      "id": "operations-troubleshooting-018",
+      "question": "¿Por qué `terraform import` (imperativo) requiere escribir la configuración del recurso antes de ejecutarlo?",
+      "answer": "Porque Terraform necesita saber el tipo de recurso para generar la entrada correcta en el state. Sin el bloque `resource`, no sabe qué schema aplicar al recurso importado.",
+      "explanation": "Flujo: (1) escribir el bloque resource en .tf (puede estar incompleto), (2) ejecutar terraform import, (3) revisar qué atributos se importaron con terraform state show, (4) actualizar el bloque resource con los atributos correctos. El bloque import {} (1.5+) puede generar la config automáticamente.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-019",
+      "question": "¿Cuál es la ventaja del bloque `import {}` sobre `terraform import` imperativo?",
+      "answer": "El bloque import {} es declarativo: se escribe en HCL, se puede revisar en un PR, es reproducible y puede combinar con `-generate-config-out` para generar la configuración automáticamente.",
+      "explanation": "terraform import imperativo: ejecutas un comando, modifica el state directamente, sin revisión previa. import block: se declara en el código como cualquier otro recurso, aparece en el plan antes de aplicar, se puede cancelar.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import"]
+    },
+    {
+      "id": "operations-troubleshooting-020",
+      "question": "¿Qué hace `terraform apply -refresh=false`?",
+      "answer": "Ejecuta el apply sin reconciliar el state con el estado real del proveedor antes de planificar. Usa el state tal como está, sin verificar si cambió externamente.",
+      "explanation": "Útil para acelerar applies cuando estás seguro de que no ha habido drift. No recomendable en general: si hay drift, Terraform puede tomar decisiones incorrectas basándose en state desactualizado.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "comandos", "state"]
+    },
+    {
+      "id": "operations-troubleshooting-021",
+      "question": "¿Qué hace `TF_LOG_CORE` vs `TF_LOG_PROVIDER`?",
+      "answer": "`TF_LOG_CORE` habilita logging solo del núcleo de Terraform. `TF_LOG_PROVIDER` habilita logging solo del provider. Permiten filtrar los logs por componente.",
+      "explanation": "Cuando solo interesa depurar errores del provider de AWS, usa `TF_LOG_PROVIDER=DEBUG` para no ver los logs del núcleo. Si el error es en la evaluación de expresiones HCL, usa `TF_LOG_CORE=DEBUG`.",
+      "difficulty": "advanced",
+      "tags": ["cert", "debugging", "logs"]
+    },
+    {
+      "id": "operations-troubleshooting-022",
+      "question": "¿Qué diferencia hay entre `terraform state mv` y el bloque `moved {}`?",
+      "answer": "`terraform state mv` es imperativo, modifica el state desde CLI sin dejar rastro en el código. El bloque `moved {}` es declarativo, se incluye en el HCL, se revisa en PR y es reproducible.",
+      "explanation": "moved {} (Terraform 1.1+) es preferible para refactoring: `moved { from = aws_instance.old to = aws_instance.new }`. terraform state mv es útil para operaciones de emergencia o cuando no se controla la configuración.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "operations-troubleshooting-023",
+      "question": "¿Cómo se obtiene ayuda de cualquier comando de Terraform?",
+      "answer": "Con el flag `-help` o `-h`: `terraform plan -help`, `terraform apply -help`, `terraform state -help`. También `terraform help` para lista de comandos.",
+      "explanation": "La documentación del CLI siempre está disponible. Cada subcomando tiene su propio -help: `terraform state mv -help` muestra la sintaxis específica de ese subcomando.",
+      "difficulty": "basic",
+      "tags": ["cert", "comandos"]
+    },
+    {
+      "id": "operations-troubleshooting-024",
+      "question": "¿Qué pasa si `terraform apply` se interrumpe a la mitad de la ejecución?",
+      "answer": "El state puede quedar en estado parcial: algunos recursos creados/modificados y otros no. El lock también puede quedar activo. Terraform crea un archivo de respaldo `.tfstate.backup` antes de modificar el state.",
+      "explanation": "Pasos de recuperación: (1) verificar el lock con `terraform force-unlock` si es necesario, (2) ejecutar `terraform plan` para ver el estado actual y qué falta, (3) ejecutar `terraform apply` de nuevo para completar. No editar el state manualmente.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "debugging"]
+    },
+    {
+      "id": "operations-troubleshooting-025",
+      "question": "¿Qué información útil provee la salida de `terraform plan -detailed-exitcode`?",
+      "answer": "Exit code 0: no hay cambios. Exit code 1: error. Exit code 2: hay cambios pendientes. Útil en scripts y CI/CD para determinar si hay cambios sin analizar el texto de la salida.",
+      "explanation": "`terraform plan -detailed-exitcode; echo $?` retorna 0, 1 o 2. En scripts: `if terraform plan -detailed-exitcode; then echo 'no changes'; fi`. Permite automatizar decisiones basadas en si hay cambios pendientes.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "comandos", "ci-cd"]
+    },
+    {
+      "id": "operations-troubleshooting-026",
+      "question": "¿Qué hace `terraform providers mirror`?",
+      "answer": "Descarga los providers requeridos y los guarda en un directorio local, creando un mirror local del Terraform Registry. Útil para entornos sin acceso a internet.",
+      "explanation": "Flujo air-gapped: (1) en máquina con internet: `terraform providers mirror ./local-mirror`, (2) copiar el directorio al entorno sin internet, (3) configurar `provider_installation` con `filesystem_mirror` en la CLI config para usar el mirror local.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "providers"]
+    },
+    {
+      "id": "operations-troubleshooting-027",
+      "question": "¿Para qué sirve el archivo `crash.log` que genera Terraform?",
+      "answer": "Terraform genera un archivo `crash.log` cuando ocurre un panic (crash del programa). Contiene el stack trace completo del error, útil para reportar bugs al equipo de HashiCorp.",
+      "explanation": "Un crash de Terraform es raro y generalmente indica un bug en el provider o en Terraform mismo. El archivo crash.log contiene el backtrace técnico. Los errores normales de configuración o del proveedor NO generan crash.log.",
+      "difficulty": "advanced",
+      "tags": ["cert", "debugging"]
+    },
+    {
+      "id": "operations-troubleshooting-028",
+      "question": "¿Qué hace `terraform apply -lock=false`?",
+      "answer": "Ejecuta el apply sin intentar adquirir el lock del state. Operación de emergencia cuando el locking no está disponible o el lock está en un estado inconsistente.",
+      "explanation": "Usar con extremo cuidado: sin locking, dos applies pueden ejecutarse simultáneamente y corromper el state. Solo apropiado en entornos de desarrollo individual o cuando se confirma que no hay otras operaciones en progreso.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "state", "locking"]
+    },
+    {
+      "id": "operations-troubleshooting-029",
+      "question": "¿Cuál es la diferencia entre `terraform import` y el bloque `import {}` respecto a revisión y trazabilidad?",
+      "answer": "`terraform import` (imperativo): sin revisión previa (modifica el state directamente), sin trazabilidad en el código. Bloque `import {}`: aparece en el plan para revisión, queda en el historial de git, es reproducible.",
+      "explanation": "La trazabilidad es importante en equipos: si alguien importó un recurso usando el bloque import {} hace 6 meses, el historial de git muestra exactamente qué se importó y por qué. Con terraform import imperativo, esa información solo está en el historial de commits del state.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import"]
+    },
+    {
+      "id": "operations-troubleshooting-030",
+      "question": "¿Cuáles son los pasos para importar un recurso existente usando el método moderno (Terraform 1.5+)?",
+      "answer": "(1) Agregar bloque `import { to = tipo.nombre id = \"ID_del_recurso\" }`. (2) Ejecutar `terraform plan -generate-config-out=generated.tf` para generar la configuración. (3) Revisar y ajustar `generated.tf`. (4) Ejecutar `terraform apply`. (5) Eliminar el bloque import del código.",
+      "explanation": "El bloque import se puede mantener en el código o eliminarse después del apply. Si se mantiene, Terraform lo ignora en futuros applies (ya importó el recurso). Lo recomendable es eliminarlo o moverlo a un módulo de documentación.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "import", "state"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 85,
+    "questions": [
+      {
+        "id": "operations-troubleshooting-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la ventaja principal del bloque `import {}` sobre `terraform import` imperativo?",
+        "options": [
+          { "id": "a", "text": "El bloque import {} es más rápido de ejecutar" },
+          { "id": "b", "text": "Es declarativo, aparece en el plan para revisión y queda en el historial del repositorio" },
+          { "id": "c", "text": "Solo el bloque import {} puede importar recursos de proveedores partner" },
+          { "id": "d", "text": "El bloque import {} no requiere que el recurso exista previamente en el proveedor" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El bloque import {} es declarativo: se incluye en la configuración HCL, aparece en el plan antes de aplicar, puede revisarse en un PR y queda en el historial de git. terraform import imperativo modifica el state directamente sin revisión.",
+        "tags": ["cert", "import"]
+      },
+      {
+        "id": "operations-troubleshooting-q002",
+        "type": "single-choice",
+        "question": "¿Qué variable de entorno habilita el logging detallado de Terraform?",
+        "options": [
+          { "id": "a", "text": "TERRAFORM_DEBUG=true" },
+          { "id": "b", "text": "TF_LOG=DEBUG" },
+          { "id": "c", "text": "TF_VERBOSE=1" },
+          { "id": "d", "text": "TERRAFORM_LOG_LEVEL=debug" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "TF_LOG es la variable de entorno correcta. Los niveles válidos son TRACE, DEBUG, INFO, WARN, ERROR. TF_LOG=TRACE es el más detallado. TF_LOG_PATH redirige los logs a un archivo.",
+        "tags": ["cert", "debugging", "logs"]
+      },
+      {
+        "id": "operations-troubleshooting-q003",
+        "type": "single-choice",
+        "question": "¿Por qué está deprecado `terraform taint`?",
+        "options": [
+          { "id": "a", "text": "Porque genera archivos temporales que no se limpian automáticamente" },
+          { "id": "b", "text": "Porque fue reemplazado por `-replace`, que muestra el efecto en el plan antes de ejecutar" },
+          { "id": "c", "text": "Porque solo funcionaba en Terraform 0.x" },
+          { "id": "d", "text": "Porque modificaba accidentalmente recursos en producción" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform taint modifica el state directamente para marcar un recurso para recreación, sin mostrar el efecto en un plan previo. terraform apply -replace hace lo mismo pero muestra el efecto en el plan primero, siendo más seguro y transparente.",
+        "tags": ["cert", "deprecated", "comandos"]
+      },
+      {
+        "id": "operations-troubleshooting-q004",
+        "type": "true-false",
+        "question": "El flag `-target` en `terraform apply` es la forma recomendada para actualizar recursos específicos en un flujo de trabajo normal.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "-target NO es para uso normal. Puede dejar el state inconsistente al no actualizar recursos dependientes. Solo para operaciones de emergencia o debugging. HashiCorp desaconseja su uso habitual.",
+        "tags": ["cert", "comandos", "target"]
+      },
+      {
+        "id": "operations-troubleshooting-q005",
+        "type": "single-choice",
+        "question": "¿Qué comando usarías para forzar la recreación de `aws_instance.web` sin cambios en su configuración?",
+        "options": [
+          { "id": "a", "text": "terraform taint aws_instance.web && terraform apply" },
+          { "id": "b", "text": "terraform apply -force=aws_instance.web" },
+          { "id": "c", "text": "terraform apply -replace=aws_instance.web" },
+          { "id": "d", "text": "terraform state rm aws_instance.web && terraform apply" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "terraform apply -replace=aws_instance.web fuerza la destrucción y recreación del recurso, mostrando primero el efecto en el plan. Es el reemplazo del deprecado terraform taint. La opción D también recrearía el recurso pero perdería el state del recurso.",
+        "tags": ["cert", "comandos", "replace"]
+      },
+      {
+        "id": "operations-troubleshooting-q006",
+        "type": "single-choice",
+        "question": "¿Qué hace `terraform plan -generate-config-out=generated.tf`?",
+        "options": [
+          { "id": "a", "text": "Genera un plan binario que puede usarse con terraform apply" },
+          { "id": "b", "text": "Genera la configuración HCL para recursos declarados en bloques import {}" },
+          { "id": "c", "text": "Exporta toda la configuración actual a un archivo de respaldo" },
+          { "id": "d", "text": "Genera un diagrama visual de los recursos en formato SVG" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "-generate-config-out genera la configuración HCL automáticamente para los recursos especificados en bloques import {}. Disponible desde Terraform 1.5 (experimental) y estable en 1.6+. Elimina la necesidad de escribir manualmente la configuración al importar.",
+        "tags": ["cert", "import"]
+      },
+      {
+        "id": "operations-troubleshooting-q007",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son niveles válidos para `TF_LOG`? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "TRACE" },
+          { "id": "b", "text": "VERBOSE" },
+          { "id": "c", "text": "DEBUG" },
+          { "id": "d", "text": "WARN" },
+          { "id": "e", "text": "CRITICAL" }
+        ],
+        "correctAnswers": ["a", "c", "d"],
+        "explanation": "Los niveles válidos para TF_LOG son: TRACE, DEBUG, INFO, WARN, ERROR (de más a menos detallado). VERBOSE y CRITICAL no son niveles válidos de Terraform.",
+        "tags": ["cert", "debugging", "logs"]
+      },
+      {
+        "id": "operations-troubleshooting-q008",
+        "type": "single-choice",
+        "question": "Un equipo necesita importar 50 recursos existentes de AWS al state de Terraform y también generar su configuración. ¿Cuál es el enfoque más eficiente con Terraform 1.6+?",
+        "options": [
+          { "id": "a", "text": "Ejecutar `terraform import` manualmente para cada uno de los 50 recursos" },
+          { "id": "b", "text": "Declarar 50 bloques `import {}` y ejecutar `terraform plan -generate-config-out=generated.tf`" },
+          { "id": "c", "text": "Crear manualmente la configuración para los 50 recursos y luego usar terraform import" },
+          { "id": "d", "text": "Usar terraform state push para cargar el state manualmente" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los bloques import {} con -generate-config-out es el enfoque moderno para importación masiva. Declaras todos los import blocks, ejecutas plan con generate-config-out para obtener la configuración HCL generada automáticamente, la revisas y ejecutas apply.",
+        "tags": ["cert", "import"]
+      },
+      {
+        "id": "operations-troubleshooting-q009",
+        "type": "true-false",
+        "question": "El flag `-target` en Terraform garantiza que el state queda consistente después de la operación.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "-target puede dejar el state inconsistente: actualiza el recurso especificado pero ignora otros recursos que podrían necesitar actualizarse como resultado. Siempre ejecutar terraform plan sin -target después para verificar el estado completo.",
+        "tags": ["cert", "comandos", "target"]
+      },
+      {
+        "id": "operations-troubleshooting-q010",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia entre `terraform show` y `terraform state show aws_instance.web`?",
+        "options": [
+          { "id": "a", "text": "No hay diferencia, muestran lo mismo" },
+          { "id": "b", "text": "terraform show muestra el state completo; terraform state show muestra los atributos de un recurso específico" },
+          { "id": "c", "text": "terraform state show puede leer plan files; terraform show no" },
+          { "id": "d", "text": "terraform show solo funciona después de un apply; state show funciona siempre" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform show = vista del state completo o de un plan file. terraform state show = atributos de un recurso específico del state. Para inspeccionar un recurso puntual, state show es más preciso y menos verboso.",
+        "tags": ["cert", "comandos", "state"]
+      },
+      {
+        "id": "operations-troubleshooting-q011",
+        "type": "single-choice",
+        "question": "What is the purpose of `terraform console`?",
+        "options": [
+          { "id": "a", "text": "To run Terraform commands in an interactive shell" },
+          { "id": "b", "text": "To evaluate HCL expressions and functions interactively against the current state" },
+          { "id": "c", "text": "To monitor terraform apply in real-time" },
+          { "id": "d", "text": "To connect to the Terraform Cloud console" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform console is a REPL for evaluating HCL expressions. You can test functions like length(), merge(), and access state values like aws_instance.web.public_ip. Useful for debugging complex expressions before adding them to configuration.",
+        "tags": ["cert", "comandos", "debugging"]
+      },
+      {
+        "id": "operations-troubleshooting-q012",
+        "type": "single-choice",
+        "question": "¿Qué exit code retorna `terraform plan -detailed-exitcode` cuando hay cambios pendientes?",
+        "options": [
+          { "id": "a", "text": "0 (éxito con cambios)" },
+          { "id": "b", "text": "1 (error)" },
+          { "id": "c", "text": "2 (éxito con cambios pendientes)" },
+          { "id": "d", "text": "3 (advertencia)" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Con -detailed-exitcode: 0 = sin cambios, 1 = error, 2 = éxito pero hay cambios pendientes. Esto permite a scripts y pipelines CI detectar si hay cambios sin analizar texto de salida.",
+        "tags": ["cert", "prod", "comandos", "ci-cd"]
+      },
+      {
+        "id": "operations-troubleshooting-q013",
+        "type": "true-false",
+        "question": "El comando `terraform taint` sigue siendo el método recomendado para forzar la recreación de un recurso en Terraform 1.x.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "terraform taint está deprecado en Terraform 1.0+. El método recomendado es `terraform apply -replace=recurso.nombre`, que muestra el efecto en el plan antes de ejecutar y es más transparente.",
+        "tags": ["cert", "deprecated", "comandos"]
+      },
+      {
+        "id": "operations-troubleshooting-q014",
+        "type": "single-choice",
+        "question": "¿Qué sucede cuando `terraform apply` se interrumpe a mitad de ejecución?",
+        "options": [
+          { "id": "a", "text": "Terraform revierte automáticamente todos los cambios realizados" },
+          { "id": "b", "text": "El state puede quedar parcialmente actualizado; el próximo plan mostrará qué falta" },
+          { "id": "c", "text": "Terraform no hace ningún cambio hasta que complete el apply completo" },
+          { "id": "d", "text": "Se crea un archivo de rollback que puede ejecutarse con terraform rollback" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Terraform no es transaccional: los cambios se aplican recurso a recurso. Si se interrumpe, el state refleja los cambios realizados hasta ese punto. El próximo plan mostrará los recursos pendientes. Terraform crea terraform.tfstate.backup como respaldo.",
+        "tags": ["cert", "state", "debugging"]
+      },
+      {
+        "id": "operations-troubleshooting-q015",
+        "type": "single-choice",
+        "question": "A developer wants to test a complex string interpolation before adding it to the Terraform configuration. What command should they use?",
+        "options": [
+          { "id": "a", "text": "terraform validate --expression" },
+          { "id": "b", "text": "terraform console" },
+          { "id": "c", "text": "terraform plan --dry-run" },
+          { "id": "d", "text": "terraform fmt --check" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform console is a REPL where developers can evaluate HCL expressions interactively. They can test interpolations, built-in functions, and access state values before committing them to configuration files.",
+        "tags": ["cert", "comandos", "debugging"]
+      },
+      {
+        "id": "operations-troubleshooting-q016",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son métodos válidos para importar un recurso existente a Terraform? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "El comando imperativo `terraform import tipo.nombre ID`" },
+          { "id": "b", "text": "El bloque declarativo `import {}` en la configuración HCL" },
+          { "id": "c", "text": "El comando `terraform state import`" },
+          { "id": "d", "text": "Editando directamente el terraform.tfstate con el recurso" }
+        ],
+        "correctAnswers": ["a", "b"],
+        "explanation": "Los métodos válidos son: terraform import imperativo y el bloque import {} declarativo. No existe 'terraform state import'. Editar manualmente el state es extremadamente riesgoso y no es un método soportado.",
+        "tags": ["cert", "import"]
+      },
+      {
+        "id": "operations-troubleshooting-q017",
+        "type": "single-choice",
+        "question": "¿Qué información adicional provee `TF_LOG=TRACE` que no provee `TF_LOG=DEBUG`?",
+        "options": [
+          { "id": "a", "text": "Solo el texto de los archivos de configuración .tf" },
+          { "id": "b", "text": "Las llamadas HTTP completas a la API del provider, incluyendo headers y cuerpos de request/response" },
+          { "id": "c", "text": "El contenido completo del state file" },
+          { "id": "d", "text": "Los valores de todas las variables de input" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "TRACE es el nivel más detallado: incluye las llamadas HTTP completas (método, URL, headers, body de request y response) que Terraform hace a la API del provider. Es muy útil para diagnosticar errores de API pero genera mucho ruido.",
+        "tags": ["cert", "debugging", "logs"]
+      },
+      {
+        "id": "operations-troubleshooting-q018",
+        "type": "true-false",
+        "question": "Después de ejecutar `terraform apply -target=aws_instance.web`, es recomendable ejecutar `terraform plan` sin -target para verificar el estado completo de la infraestructura.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Después de usar -target, el state puede ser inconsistente (otros recursos no actualizados). Un plan sin -target verifica el estado completo y muestra si hay recursos que necesitan actualizarse como resultado del cambio dirigido.",
+        "tags": ["cert", "comandos", "target"]
+      }
+    ]
+  }
+}

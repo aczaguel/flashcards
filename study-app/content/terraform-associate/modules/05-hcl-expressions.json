@@ -1,0 +1,576 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "hcl-expressions",
+    "order": 5,
+    "name": "HCL: Tipos, Expresiones y Funciones",
+    "description": "Tipos primitivos y complejos, expresiones for, bloques dynamic, funciones built-in, null y valores desconocidos",
+    "estimatedMinutes": 65
+  },
+  "flashcards": [
+    {
+      "id": "hcl-expressions-001",
+      "question": "¿Cuáles son los tipos primitivos en HCL de Terraform?",
+      "answer": "`string`, `number` y `bool`. Son la base de todos los tipos en Terraform.",
+      "explanation": "string: texto. number: entero o decimal (Terraform los trata igual). bool: true o false. Terraform puede hacer coerción implícita: `\"true\"` se convierte a bool `true` y `\"3\"` a number `3` en ciertos contextos.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-002",
+      "question": "¿Cuáles son los tipos complejos en HCL?",
+      "answer": "`list(T)`, `set(T)`, `map(T)`, `object({...})` y `tuple([...])`. Los primeros tres son colecciones homogéneas; los últimos dos son estructurales.",
+      "explanation": "list: secuencia ordenada con duplicados (índice numérico). set: colección sin orden ni duplicados. map: pares clave-valor con claves string. object: pares clave-valor con tipos diferentes por clave. tuple: secuencia con tipos diferentes por posición.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-003",
+      "question": "¿Qué es el tipo `any` en Terraform y cuándo se usa?",
+      "answer": "`any` es un tipo especial que acepta cualquier tipo de valor. Se usa en variables cuando el tipo exacto se conoce en tiempo de uso, no en la declaración.",
+      "explanation": "Con `type = any`, Terraform infiere el tipo del valor proporcionado. No es un tipo en sí mismo sino un marcador de posición. Se debe evitar cuando se puede ser más específico, ya que pierde seguridad de tipos.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-004",
+      "question": "¿Cuál es la diferencia entre interpolación `\"${var.name}\"` y referencia directa `var.name`?",
+      "answer": "La referencia directa `var.name` se usa cuando se asigna solo el valor a un atributo. La interpolación `\"${var.name}\"` es para incrustar el valor dentro de un string más largo.",
+      "explanation": "Ejemplo: `ami = var.ami_id` (referencia directa, sin comillas). `name = \"${var.prefix}-server\"` (interpolación, el valor forma parte de un string). No usar interpolación para asignaciones directas: `ami = \"${var.ami_id}\"` es innecesariamente complejo.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "expresiones"]
+    },
+    {
+      "id": "hcl-expressions-005",
+      "question": "¿Qué es un heredoc en HCL y cuándo se usa?",
+      "answer": "Sintaxis para strings multilínea. `<<EOF ... EOF` preserva la indentación. `<<-EOF ... EOF` (heredoc indented) elimina la indentación común, permitiendo indentar el contenido con el código.",
+      "explanation": "Ejemplo con heredoc indented: `user_data = <<-EOF #!/bin/bash echo 'hello' EOF`. La versión `<<-EOF` es preferible en código moderno porque permite mantener la indentación del archivo sin que aparezca en el string.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "strings"]
+    },
+    {
+      "id": "hcl-expressions-006",
+      "question": "¿Cómo funciona la expresión `for` para transformar una lista en HCL?",
+      "answer": "`[for item in var.list : expression]` — crea una nueva lista aplicando `expression` a cada elemento. Se puede filtrar con `if`: `[for item in var.list : item if item != \"\"]`.",
+      "explanation": "Ejemplos: `[for s in [\"a\",\"b\",\"c\"] : upper(s)]` → `[\"A\",\"B\",\"C\"]`. `[for i, v in [\"x\",\"y\"] : \"${i}:${v}\"]` → `[\"0:x\",\"1:y\"]`. Para mapas: `{for k, v in var.map : k => upper(v)}`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "expresiones", "for"]
+    },
+    {
+      "id": "hcl-expressions-007",
+      "question": "¿Cómo se usa la expresión `for` para transformar un map?",
+      "answer": "`{for key, value in var.map : new_key => new_value}` — crea un nuevo map. Con filtro: `{for k, v in var.map : k => v if v != null}`.",
+      "explanation": "Ejemplo: `{for id, user in var.users : id => user.name}` toma un map de objetos y extrae solo el nombre. La expresión for en llaves `{}` produce un map; en corchetes `[]` produce una lista.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "expresiones", "for"]
+    },
+    {
+      "id": "hcl-expressions-008",
+      "question": "¿Para qué sirve el bloque `dynamic` en Terraform?",
+      "answer": "Genera dinámicamente bloques de configuración repetibles dentro de un resource, basándose en una colección. Evita duplicar bloques manualmente.",
+      "explanation": "Ejemplo: en lugar de definir 5 bloques `ingress` manualmente en un security group, usar `dynamic \"ingress\" { for_each = var.ingress_rules content { ... } }`. El contenido del bloque usa `ingress.value` para acceder al elemento actual.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "dynamic"]
+    },
+    {
+      "id": "hcl-expressions-009",
+      "question": "¿Qué hace la función `length()` en Terraform?",
+      "answer": "Retorna el número de elementos de una lista, set, o map, o el número de caracteres (bytes) de un string.",
+      "explanation": "`length([\"a\",\"b\",\"c\"])` → 3. `length({\"k1\":\"v1\",\"k2\":\"v2\"})` → 2. `length(\"hello\")` → 5. Útil para condicionar la creación de recursos: `count = length(var.users) > 0 ? 1 : 0`.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-010",
+      "question": "¿Qué diferencia hay entre `toset()`, `tolist()` y `tomap()`?",
+      "answer": "`toset()` convierte a set (elimina duplicados, pierde orden). `tolist()` convierte a lista ordenada. `tomap()` convierte un objeto a map. Son funciones de conversión de tipos.",
+      "explanation": "`toset([\"b\",\"a\",\"a\"])` → `{\"a\",\"b\"}` (sin orden, sin duplicados). `tolist({\"a\"=1,\"b\"=2})` no funciona (object → list no es válido). `toset` es especialmente útil para preparar valores para `for_each`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-011",
+      "question": "¿Qué hace la función `lookup(map, key, default)`?",
+      "answer": "Busca `key` en `map`. Si existe, retorna su valor. Si no existe, retorna `default`. Si no se proporciona default y la clave no existe, lanza un error.",
+      "explanation": "`lookup({\"a\":1,\"b\":2}, \"a\", 0)` → 1. `lookup({\"a\":1,\"b\":2}, \"c\", 0)` → 0. Más seguro que `map[\"key\"]` cuando la clave puede no existir.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-012",
+      "question": "¿Qué hace la función `merge(map1, map2, ...)`?",
+      "answer": "Combina múltiples maps en uno. Si hay claves duplicadas, el valor del map más a la derecha sobreescribe al anterior.",
+      "explanation": "`merge({\"a\":1,\"b\":2},{\"b\":3,\"c\":4})` → `{\"a\":1,\"b\":3,\"c\":4}`. Muy útil para combinar tags: `merge(var.common_tags, {\"Name\":\"mi-recurso\"})`. El orden importa para resolver duplicados.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-013",
+      "question": "¿Qué hace la función `flatten(list_of_lists)`?",
+      "answer": "Toma una lista que puede contener listas anidadas y las aplana en una sola lista de un nivel.",
+      "explanation": "`flatten([[\"a\",\"b\"],[\"c\"]])` → `[\"a\",\"b\",\"c\"]`. Muy útil al combinar expresiones `for` que producen listas de listas. Ejemplo: múltiples módulos cada uno con una lista de IPs → flattenear para una lista única.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-014",
+      "question": "¿Qué hace la función `try(expression, fallback)`?",
+      "answer": "Evalúa `expression` y si produce un error, retorna `fallback` en lugar de lanzar el error. Permite manejo de errores en expresiones HCL.",
+      "explanation": "`try(var.config.timeout, 30)` retorna el valor de `var.config.timeout` si existe y no es null, o 30 si la expresión falla (ej: timeout no está definido en el objeto). Se diferencia de `can()` que retorna bool.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-015",
+      "question": "¿Cuál es la diferencia entre `try()` y `can()` en Terraform?",
+      "answer": "`try(expr, fallback)` retorna el valor de `expr` o `fallback` si falla. `can(expr)` retorna `true` si la expresión se puede evaluar sin error, `false` si falla. `can` es útil para condiciones booleanas.",
+      "explanation": "`can(var.config.timeout)` → true si timeout existe, false si no. `try(var.config.timeout, 30)` → el valor de timeout o 30. `can` es para condiciones; `try` es para valores con fallback.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-016",
+      "question": "¿Qué es un valor `null` en Terraform y cuál es su semántica?",
+      "answer": "`null` representa la ausencia de un valor. En argumentos de recursos, `null` es equivalente a no incluir el argumento — el provider usará su valor por defecto.",
+      "explanation": "Ejemplo: `instance_type = var.instance_type != null ? var.instance_type : null` es válido. Si un atributo opcional recibe null, Terraform lo omite como si no se hubiera declarado. Es distinto de `\"\"` (string vacío).",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "null"]
+    },
+    {
+      "id": "hcl-expressions-017",
+      "question": "¿Qué significa `(known after apply)` en la salida de `terraform plan`?",
+      "answer": "El valor de ese atributo no puede determinarse hasta que el recurso sea creado. Es un valor desconocido en tiempo de plan porque el proveedor lo asignará durante el apply.",
+      "explanation": "Ejemplo: el ID de una instancia EC2, su IP pública o un ARN generado automáticamente. Si otro recurso depende de ese valor, su plan también mostrará `(known after apply)`. Esto es normal y esperado para atributos generados por el proveedor.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "valores-desconocidos"]
+    },
+    {
+      "id": "hcl-expressions-018",
+      "question": "¿Qué hace la función `coalesce(a, b, c, ...)`?",
+      "answer": "Retorna el primer valor que no sea null ni string vacío. Similar a un operador `OR` que ignora nulls y strings vacíos.",
+      "explanation": "`coalesce(\"\", null, \"hello\", \"world\")` → `\"hello\"`. Útil cuando varias fuentes pueden proporcionar un valor y quieres el primero válido. `coalescelist` hace lo mismo para listas.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-019",
+      "question": "¿Cómo se escribe un operador condicional (ternario) en HCL?",
+      "answer": "`condition ? value_if_true : value_if_false`. Ejemplo: `instance_type = var.env == \"prod\" ? \"t3.large\" : \"t3.micro\"`.",
+      "explanation": "Los dos valores deben ser del mismo tipo o compatibles. Se puede anidar: `a ? b : (c ? d : e)`. Es la forma estándar de condicionamiento de valores en HCL sin necesidad de variables intermedias.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "expresiones"]
+    },
+    {
+      "id": "hcl-expressions-020",
+      "question": "¿Cuándo usar `object({})` vs `map(T)` como tipo de variable?",
+      "answer": "`map(T)` para colecciones con claves string y todos los valores del mismo tipo. `object({})` cuando cada clave tiene un tipo diferente y el schema es fijo.",
+      "explanation": "Ejemplo map: `type = map(string)` para `{\"env\":\"prod\", \"region\":\"us-east-1\"}`. Ejemplo object: `type = object({name=string, count=number, enabled=bool})` cuando las claves tienen tipos distintos.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-021",
+      "question": "¿Qué hace la función `jsonencode(value)`?",
+      "answer": "Convierte un valor de Terraform (object, list, map, primitivos) a su representación como string JSON.",
+      "explanation": "`jsonencode({\"key\":\"value\",\"list\":[1,2,3]})` → `\"{\\\"key\\\":\\\"value\\\",\\\"list\\\":[1,2,3]}\"`. Muy útil para pasar datos complejos a recursos que esperan JSON en formato string (ej: políticas IAM, configuraciones de ECS task definitions).",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones", "json"]
+    },
+    {
+      "id": "hcl-expressions-022",
+      "question": "¿Qué hace la función `jsondecode(string)`?",
+      "answer": "Parsea un string JSON y lo convierte a un valor de Terraform (object, list, etc.). Es el inverso de `jsonencode()`.",
+      "explanation": "`jsondecode(\"{\\\"key\\\":\\\"value\\\"}\")` → `{key = \"value\"}`. Útil para procesar outputs de data sources que retornan JSON como string. Se puede combinar con `file()`: `jsondecode(file(\"config.json\"))`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones", "json"]
+    },
+    {
+      "id": "hcl-expressions-023",
+      "question": "¿Qué hace la función `templatefile(path, vars)`?",
+      "answer": "Lee el archivo en `path` y renderiza las variables `vars` en él usando la sintaxis de interpolación de Terraform (`${}`). Retorna el string resultante.",
+      "explanation": "Ejemplo: `user_data = templatefile(\"${path.module}/startup.tpl\", { db_host = aws_db_instance.main.endpoint })`. El archivo .tpl contiene texto con referencias `${db_host}`. Más limpio que heredocs largos en HCL.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones", "templates"]
+    },
+    {
+      "id": "hcl-expressions-024",
+      "question": "¿Cómo se diferencia `list(T)` de `set(T)` en comportamiento?",
+      "answer": "`list(T)` mantiene el orden y permite duplicados. `set(T)` no mantiene orden garantizado y elimina duplicados automáticamente.",
+      "explanation": "Ejemplo: `toset([\"c\",\"a\",\"b\",\"a\"])` → `{\"a\",\"b\",\"c\"}` (sin duplicados, sin orden garantizado). `tolist` de un set puede retornar en orden diferente. Para `for_each` se suele usar `toset()` de una lista de strings únicos.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-025",
+      "question": "¿Qué hace la función `concat(list1, list2, ...)`?",
+      "answer": "Une múltiples listas en una sola, preservando el orden y los duplicados.",
+      "explanation": "`concat([\"a\",\"b\"],[\"c\",\"d\"])` → `[\"a\",\"b\",\"c\",\"d\"]`. Se diferencia de `flatten`: concat une listas de primer nivel; flatten aplana listas anidadas arbitrariamente.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-026",
+      "question": "¿Por qué los valores desconocidos (`known after apply`) en `count` o `for_each` son problemáticos?",
+      "answer": "Terraform no puede calcular el número de recursos a crear si el valor que determina count o for_each es desconocido en tiempo de plan. Esto genera un error.",
+      "explanation": "Si `count = length(aws_instance.servers)` pero `aws_instance.servers` no existe aún, el plan falla. La solución es usar valores conocidos para count/for_each o refactorizar para no depender de valores que se conocerán solo después del apply.",
+      "difficulty": "advanced",
+      "tags": ["cert", "hcl", "valores-desconocidos", "count", "for_each"]
+    },
+    {
+      "id": "hcl-expressions-027",
+      "question": "¿Qué función usarías para formatear un string con un patrón en Terraform?",
+      "answer": "`format(format_string, values...)` — similar a printf. Ejemplo: `format(\"Hello, %s! You have %d messages.\", var.user, var.count)`.",
+      "explanation": "Soporta: %s (string), %d (entero), %f (float), %v (cualquier tipo). También: `formatlist` para aplicar format a una lista. La interpolación `\"${}\"}` es la alternativa más común para casos simples.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "funciones", "strings"]
+    },
+    {
+      "id": "hcl-expressions-028",
+      "question": "¿Qué hace el bloque `dynamic` cuando `for_each` es un valor vacío?",
+      "answer": "No genera ningún bloque. Si `for_each = var.rules` y `var.rules` es un map o set vacío, el bloque dynamic no produce ningún bloque en la configuración del recurso.",
+      "explanation": "Esto es útil para hacer bloques opcionales: si la variable está vacía, el recurso se crea sin ese bloque. Si tiene elementos, genera tantos bloques como elementos haya.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "dynamic"]
+    },
+    {
+      "id": "hcl-expressions-029",
+      "question": "¿Cuál es la diferencia entre `split()` y `join()` en Terraform?",
+      "answer": "`split(separator, string)` divide un string en una lista usando el separador. `join(separator, list)` une una lista en un string con el separador.",
+      "explanation": "`split(\",\", \"a,b,c\")` → `[\"a\",\"b\",\"c\"]`. `join(\",\", [\"a\",\"b\",\"c\"])` → `\"a,b,c\"`. Son operaciones inversas, útiles para procesar CSV o construir strings de configuración.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "funciones", "strings"]
+    },
+    {
+      "id": "hcl-expressions-030",
+      "question": "¿Cómo acceder al índice en una expresión `for` sobre una lista?",
+      "answer": "Con la sintaxis de dos variables: `[for i, v in var.list : \"${i}:${v}\"]`. `i` es el índice numérico, `v` es el valor.",
+      "explanation": "Para listas: `for i, v in list` da índice y valor. Para maps: `for k, v in map` da clave y valor. Solo una variable: `for v in list` da solo el valor. `for k in map` da solo la clave.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "expresiones", "for"]
+    },
+    {
+      "id": "hcl-expressions-031",
+      "question": "¿Qué hace `keys(map)` y `values(map)`?",
+      "answer": "`keys(map)` retorna una lista ordenada alfabéticamente de las claves del map. `values(map)` retorna una lista de los valores en el mismo orden que `keys()`.",
+      "explanation": "`keys({\"b\":2,\"a\":1})` → `[\"a\",\"b\"]`. `values({\"b\":2,\"a\":1})` → `[1,2]`. El orden es alfabético por clave. Útil para iterar sobre maps de forma predecible.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-032",
+      "question": "¿Qué hace la función `zipmap(keys_list, values_list)`?",
+      "answer": "Crea un map combinando dos listas: una de claves y otra de valores. Ambas listas deben tener el mismo número de elementos.",
+      "explanation": "`zipmap([\"a\",\"b\"],[1,2])` → `{\"a\":1,\"b\":2}`. Útil para construir maps dinámicamente a partir de listas paralelas.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-033",
+      "question": "¿Qué diferencia hay entre `tuple([string, number, bool])` y `list(any)` en Terraform?",
+      "answer": "`tuple` define una secuencia con tipos específicos por posición: `tuple([string, number])` espera exactamente 2 elementos con esos tipos. `list(any)` acepta cualquier número de elementos de cualquier tipo.",
+      "explanation": "tuple es útil cuando el número y tipo de elementos es fijo y conocido. list es más flexible. En la práctica, tuple se usa raramente en variables de input; es más común ver list(any) u object({}).",
+      "difficulty": "advanced",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "hcl-expressions-034",
+      "question": "¿Qué hace la función `contains(list, value)`?",
+      "answer": "Retorna `true` si `value` existe en `list`, `false` si no. Acepta listas y sets.",
+      "explanation": "`contains([\"dev\",\"staging\",\"prod\"], \"prod\")` → `true`. `contains([\"dev\",\"staging\",\"prod\"], \"test\")` → `false`. Muy usado en validaciones de variables: `condition = contains([\"dev\",\"staging\",\"prod\"], var.env)`.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "hcl-expressions-035",
+      "question": "¿Cuál es la diferencia entre `trimspace()` y `chomp()` en Terraform?",
+      "answer": "`trimspace(string)` elimina espacios en blanco (incluyendo saltos de línea) al inicio y al final. `chomp(string)` elimina solo el salto de línea final.",
+      "explanation": "`trimspace(\"  hello  \\n\")` → `\"hello\"`. `chomp(\"hello\\n\")` → `\"hello\"`. Útil para limpiar valores de archivos leídos con `file()` que pueden tener newlines al final.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcl", "funciones", "strings"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 85,
+    "questions": [
+      {
+        "id": "hcl-expressions-q001",
+        "type": "single-choice",
+        "question": "¿Cuáles son los tipos primitivos de HCL en Terraform?",
+        "options": [
+          { "id": "a", "text": "integer, float, string" },
+          { "id": "b", "text": "string, number, bool" },
+          { "id": "c", "text": "string, int, boolean" },
+          { "id": "d", "text": "text, numeric, binary" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los tres tipos primitivos en HCL son string, number (cubre enteros y decimales) y bool. No existen tipos 'integer' o 'float' separados en Terraform.",
+        "tags": ["cert", "hcl", "tipos"]
+      },
+      {
+        "id": "hcl-expressions-q002",
+        "type": "single-choice",
+        "question": "¿Qué resultado produce `toset([\"c\", \"a\", \"b\", \"a\"])`?",
+        "options": [
+          { "id": "a", "text": "[\"c\", \"a\", \"b\", \"a\"] (preserva orden y duplicados)" },
+          { "id": "b", "text": "{\"a\", \"b\", \"c\"} (sin orden garantizado, sin duplicados)" },
+          { "id": "c", "text": "[\"a\", \"b\", \"c\"] (ordenado, sin duplicados)" },
+          { "id": "d", "text": "Error porque la lista tiene duplicados" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "toset() convierte a set: elimina duplicados y el orden no está garantizado. El resultado es un set con los valores únicos {\"a\",\"b\",\"c\"}. No es un error tener duplicados en la lista de entrada.",
+        "tags": ["cert", "hcl", "funciones", "tipos"]
+      },
+      {
+        "id": "hcl-expressions-q003",
+        "type": "single-choice",
+        "question": "¿Qué produce `[for s in [\"alice\", \"bob\", \"carol\"] : upper(s) if s != \"bob\"]`?",
+        "options": [
+          { "id": "a", "text": "[\"ALICE\", \"BOB\", \"CAROL\"]" },
+          { "id": "b", "text": "[\"alice\", \"carol\"]" },
+          { "id": "c", "text": "[\"ALICE\", \"CAROL\"]" },
+          { "id": "d", "text": "Error de sintaxis" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "La expresión for filtra con `if s != \"bob\"` (excluye bob) y aplica `upper()` a cada elemento restante. Resultado: [\"ALICE\", \"CAROL\"].",
+        "tags": ["cert", "hcl", "expresiones", "for"]
+      },
+      {
+        "id": "hcl-expressions-q004",
+        "type": "single-choice",
+        "question": "¿Qué resultado produce `merge({\"a\":1,\"b\":2},{\"b\":3,\"c\":4})`?",
+        "options": [
+          { "id": "a", "text": "{\"a\":1,\"b\":2,\"c\":4}" },
+          { "id": "b", "text": "{\"a\":1,\"b\":3,\"c\":4}" },
+          { "id": "c", "text": "Error por clave duplicada" },
+          { "id": "d", "text": "{\"a\":1,\"b\":5,\"c\":4}" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "merge() combina maps y en caso de claves duplicadas, el valor del map más a la derecha tiene precedencia. La clave 'b' toma el valor 3 del segundo map, no 2 del primero.",
+        "tags": ["cert", "hcl", "funciones"]
+      },
+      {
+        "id": "hcl-expressions-q005",
+        "type": "single-choice",
+        "question": "¿Cuándo debería usarse un bloque `dynamic` en Terraform?",
+        "options": [
+          { "id": "a", "text": "Para crear recursos dinámicamente basados en variables" },
+          { "id": "b", "text": "Para generar bloques de configuración repetibles dentro de un resource basándose en una colección" },
+          { "id": "c", "text": "Para habilitar el modo de ejecución asíncrona en Terraform" },
+          { "id": "d", "text": "Para importar recursos externos al state dinámicamente" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "dynamic genera bloques de configuración (como ingress, egress, rule) dentro de un resource. Es para bloques repetibles, no para crear múltiples recursos (eso es count/for_each).",
+        "tags": ["cert", "hcl", "dynamic"]
+      },
+      {
+        "id": "hcl-expressions-q006",
+        "type": "true-false",
+        "question": "En HCL, asignar `null` a un argumento de un resource es equivalente a no incluir ese argumento: el provider usará su valor por defecto.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "En Terraform, null en un argumento de resource es semánticamente equivalente a omitir el argumento. El provider aplica su valor por defecto. Esto es distinto de un string vacío que sí es un valor explícito.",
+        "tags": ["cert", "hcl", "null"]
+      },
+      {
+        "id": "hcl-expressions-q007",
+        "type": "single-choice",
+        "question": "¿Cuál es el resultado de `try(var.config.timeout, 30)` si `var.config` es null?",
+        "options": [
+          { "id": "a", "text": "null" },
+          { "id": "b", "text": "Error: cannot access timeout on null" },
+          { "id": "c", "text": "30 (el fallback)" },
+          { "id": "d", "text": "0 (el valor por defecto de number)" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "try() evalúa la primera expresión y si produce cualquier error, retorna el fallback. Si var.config es null, acceder a .timeout falla, y try() retorna 30.",
+        "tags": ["cert", "hcl", "funciones"]
+      },
+      {
+        "id": "hcl-expressions-q008",
+        "type": "single-choice",
+        "question": "What does `(known after apply)` indicate in the output of `terraform plan`?",
+        "options": [
+          { "id": "a", "text": "The value is sensitive and will not be shown" },
+          { "id": "b", "text": "The attribute value cannot be determined until the resource is created" },
+          { "id": "c", "text": "The resource will be destroyed and recreated" },
+          { "id": "d", "text": "Terraform requires additional input before proceeding" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "(known after apply) means the provider will assign this value during apply, not before. Examples include auto-generated IDs, dynamic IPs, and ARNs. This is expected behavior for provider-assigned attributes.",
+        "tags": ["cert", "hcl", "valores-desconocidos"]
+      },
+      {
+        "id": "hcl-expressions-q009",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes son funciones válidas de Terraform para manipular colecciones? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "flatten()" },
+          { "id": "b", "text": "merge()" },
+          { "id": "c", "text": "sort()" },
+          { "id": "d", "text": "concat()" },
+          { "id": "e", "text": "filter()" }
+        ],
+        "correctAnswers": ["a", "b", "c", "d"],
+        "explanation": "flatten, merge, sort y concat son funciones válidas de Terraform. `filter` no existe como función — el filtrado se hace con expresiones for con cláusula `if`.",
+        "tags": ["cert", "hcl", "funciones"]
+      },
+      {
+        "id": "hcl-expressions-q010",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia entre `{for k, v in var.map : k => v}` y `var.map`?",
+        "options": [
+          { "id": "a", "text": "Son equivalentes; la expresión for no cambia el map" },
+          { "id": "b", "text": "La expresión for crea una copia del map; puede incluir transformaciones o filtros" },
+          { "id": "c", "text": "La expresión for siempre convierte a lista" },
+          { "id": "d", "text": "La expresión for agrega índices numéricos al map" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "En este caso específico el resultado es idéntico a var.map. Pero la expresión for en llaves {} puede transformar claves, valores o filtrar: `{for k, v in var.map : k => upper(v) if v != null}`. Es la forma de modificar un map.",
+        "tags": ["cert", "hcl", "expresiones", "for"]
+      },
+      {
+        "id": "hcl-expressions-q011",
+        "type": "single-choice",
+        "question": "Un equipo tiene políticas IAM definidas como objetos en Terraform que deben pasarse a un recurso AWS que espera JSON en formato string. ¿Qué función usarían?",
+        "options": [
+          { "id": "a", "text": "tojson(policy_object)" },
+          { "id": "b", "text": "tostring(policy_object)" },
+          { "id": "c", "text": "jsonencode(policy_object)" },
+          { "id": "d", "text": "format(\"%s\", policy_object)" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "jsonencode() convierte objetos, maps y listas de Terraform a su representación JSON como string. Es la función correcta para generar JSON de políticas IAM u otras configuraciones que esperan JSON.",
+        "tags": ["cert", "hcl", "funciones", "json"]
+      },
+      {
+        "id": "hcl-expressions-q012",
+        "type": "true-false",
+        "question": "Es válido usar `count` y `for_each` simultáneamente en el mismo bloque `resource`.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "count y for_each son mutuamente excluyentes en un mismo bloque resource. Solo se puede usar uno. Si ambos están presentes, Terraform genera un error de configuración.",
+        "tags": ["cert", "hcl", "resources", "count", "for_each"]
+      },
+      {
+        "id": "hcl-expressions-q013",
+        "type": "single-choice",
+        "question": "¿Qué función de Terraform usarías para verificar si el string `\"prod\"` está en la lista `[\"dev\",\"staging\",\"prod\"]`?",
+        "options": [
+          { "id": "a", "text": "includes([\"dev\",\"staging\",\"prod\"], \"prod\")" },
+          { "id": "b", "text": "contains([\"dev\",\"staging\",\"prod\"], \"prod\")" },
+          { "id": "c", "text": "has_value([\"dev\",\"staging\",\"prod\"], \"prod\")" },
+          { "id": "d", "text": "index([\"dev\",\"staging\",\"prod\"], \"prod\") != null" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "contains(list, value) retorna true si value existe en list. Es la función correcta para esta verificación y se usa frecuentemente en bloques validation de variables.",
+        "tags": ["cert", "hcl", "funciones"]
+      },
+      {
+        "id": "hcl-expressions-q014",
+        "type": "single-choice",
+        "question": "¿Qué produce `flatten([[\"a\",\"b\"],[\"c\"],[\"d\",\"e\"]])`?",
+        "options": [
+          { "id": "a", "text": "[[\"a\",\"b\"],[\"c\"],[\"d\",\"e\"]] (sin cambios)" },
+          { "id": "b", "text": "[\"a\",\"b\",\"c\",\"d\",\"e\"]" },
+          { "id": "c", "text": "[\"a\",\"b\",\"c\",\"d\",\"e\",3] (los 3 elementos de primer nivel)" },
+          { "id": "d", "text": "Error porque las sublistas tienen diferente longitud" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "flatten() aplana una lista de listas en una sola lista. [\"a\",\"b\"] + [\"c\"] + [\"d\",\"e\"] = [\"a\",\"b\",\"c\",\"d\",\"e\"]. Funciona con sublistas de cualquier longitud.",
+        "tags": ["cert", "hcl", "funciones"]
+      },
+      {
+        "id": "hcl-expressions-q015",
+        "type": "single-choice",
+        "question": "When would you use `<<-EOF` (indented heredoc) instead of `<<EOF` in HCL?",
+        "options": [
+          { "id": "a", "text": "When the heredoc content contains special characters" },
+          { "id": "b", "text": "To allow the heredoc content to be indented with the surrounding code without including that indentation in the string" },
+          { "id": "c", "text": "When the heredoc spans more than 10 lines" },
+          { "id": "d", "text": "<<-EOF is only valid inside module blocks" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "The indented heredoc <<-EOF strips the leading whitespace that matches the closing marker indentation, allowing the content to be properly indented in the HCL file without that indentation appearing in the final string value.",
+        "tags": ["cert", "hcl", "strings"]
+      },
+      {
+        "id": "hcl-expressions-q016",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes son diferencias entre `list(T)` y `set(T)` en Terraform? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "list mantiene el orden de inserción; set no garantiza orden" },
+          { "id": "b", "text": "list permite duplicados; set elimina duplicados automáticamente" },
+          { "id": "c", "text": "list acepta tipos mixtos; set requiere todos del mismo tipo" },
+          { "id": "d", "text": "set puede usarse con for_each directamente; list requiere toset() primero" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "Las diferencias clave son: orden (list garantizado, set no), duplicados (list los permite, set los elimina), y uso con for_each (set es compatible directo, list necesita conversión). Ambos requieren el mismo tipo T; la opción C es incorrecta.",
+        "tags": ["cert", "hcl", "tipos"]
+      },
+      {
+        "id": "hcl-expressions-q017",
+        "type": "single-choice",
+        "question": "¿Por qué puede ser problemático usar un valor `(known after apply)` como entrada para `count` o `for_each`?",
+        "options": [
+          { "id": "a", "text": "Terraform no puede ejecutar el plan si hay valores desconocidos" },
+          { "id": "b", "text": "Terraform no puede determinar cuántos recursos crear si el valor que define count/for_each es desconocido en tiempo de plan" },
+          { "id": "c", "text": "Los valores known after apply solo se pueden usar en outputs" },
+          { "id": "d", "text": "No es problemático; Terraform lo maneja automáticamente en el next plan" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Para count y for_each, Terraform necesita saber cuántos recursos crear ANTES del apply. Si el valor es unknown (known after apply), no puede calcularlo y falla con error. La solución es restructurar la configuración para usar valores conocidos.",
+        "tags": ["cert", "hcl", "valores-desconocidos"]
+      },
+      {
+        "id": "hcl-expressions-q018",
+        "type": "single-choice",
+        "question": "¿Cómo se hace referencia al elemento actual dentro de un bloque `dynamic`?",
+        "options": [
+          { "id": "a", "text": "Con `item.value` y `item.key`" },
+          { "id": "b", "text": "Con `current.value` dentro del bloque `content`" },
+          { "id": "c", "text": "Con el nombre del bloque como prefijo: `bloque.value` y `bloque.key`" },
+          { "id": "d", "text": "Con `var.current` que Terraform define automáticamente" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "En un bloque dynamic \"ingress\" { for_each = var.rules content { ... } }, se accede al elemento actual con ingress.value y ingress.key (usando el nombre del bloque como prefijo, no 'item' o 'each').",
+        "tags": ["cert", "hcl", "dynamic"]
+      },
+      {
+        "id": "hcl-expressions-q019",
+        "type": "true-false",
+        "question": "La función `can(expression)` retorna el resultado de la expresión si es válida, o null si produce un error.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "can() retorna bool: true si la expresión se puede evaluar sin error, false si falla. No retorna el resultado de la expresión ni null. Para obtener el resultado con un fallback, usar try().",
+        "tags": ["cert", "hcl", "funciones"]
+      },
+      {
+        "id": "hcl-expressions-q020",
+        "type": "single-choice",
+        "question": "A developer needs to combine tags from a common map and a resource-specific map, where resource-specific tags should override common ones. Which function is appropriate?",
+        "options": [
+          { "id": "a", "text": "concat(common_tags, specific_tags)" },
+          { "id": "b", "text": "merge(common_tags, specific_tags)" },
+          { "id": "c", "text": "flatten([common_tags, specific_tags])" },
+          { "id": "d", "text": "zipmap(keys(common_tags), values(specific_tags))" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "merge(common_tags, specific_tags) combines both maps and when there are duplicate keys, the rightmost map wins. So specific_tags will override common_tags for any shared keys. This is the standard pattern for tag merging in Terraform.",
+        "tags": ["cert", "hcl", "funciones"]
+      }
+    ]
+  }
+}

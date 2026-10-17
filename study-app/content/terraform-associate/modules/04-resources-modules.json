@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "contentVersion": "1.0.0",
+  "contentVersion": "2.0.0",
   "type": "study-module",
   "certificationId": "terraform-associate",
   "language": "es-MX",
@@ -8,190 +8,530 @@
     "id": "resources-modules",
     "order": 4,
     "name": "Resources, Variables y Módulos",
-    "description": "Recursos, variables de entrada/salida, locals, data sources y módulos reutilizables",
-    "estimatedMinutes": 55
+    "description": "Recursos, meta-arguments, data sources, variables, outputs, locals, count vs for_each y módulos reutilizables",
+    "estimatedMinutes": 65
   },
   "flashcards": [
     {
       "id": "resources-modules-001",
       "question": "¿Cuál es la sintaxis básica de un resource en Terraform?",
-      "answer": "`resource \"tipo_recurso\" \"nombre_local\" { argumentos }`. Ej: resource \"aws_instance\" \"web\" { ami = \"ami-12345\" instance_type = \"t3.micro\" }",
-      "explanation": "El tipo_recurso incluye el nombre del provider (aws_) y el tipo de recurso (instance). El nombre_local es un identificador único dentro de la configuración. Se referencia como aws_instance.web.",
+      "answer": "`resource \"tipo_recurso\" \"nombre_local\" { argumentos }`. El tipo incluye el prefijo del provider. Ej: `resource \"aws_instance\" \"web\" { ami = \"ami-...\" instance_type = \"t3.micro\" }`.",
+      "explanation": "El tipo_recurso determina qué provider se usa (aws_) y qué tipo de recurso (instance). El nombre_local es un identificador dentro de la configuración. Se referencia como `aws_instance.web`. El nombre_local no aparece en el proveedor.",
       "difficulty": "basic",
-      "tags": ["resources", "hcl"]
+      "tags": ["cert", "resources", "hcl"]
     },
     {
       "id": "resources-modules-002",
-      "question": "¿Qué es una `variable` de input en Terraform?",
-      "answer": "Parámetro de entrada que hace la configuración reutilizable y configurable. Se declara con bloque `variable` y se usa como `var.nombre`.",
-      "explanation": "Ejemplo: variable \"region\" { type = string, default = \"us-east-1\", description = \"AWS region\" }. Se puede pasar por CLI (-var), archivo .tfvars o variable de entorno TF_VAR_region.",
+      "question": "¿Qué es una variable de input en Terraform y cómo se declara?",
+      "answer": "Parámetro de entrada que hace la configuración reutilizable. Se declara con bloque `variable`, especificando tipo, descripción y valor por defecto (opcional). Se referencia como `var.nombre`.",
+      "explanation": "Ejemplo: `variable \"region\" { type = string, description = \"AWS region\", default = \"us-east-1\" }`. Los tipos pueden ser string, number, bool, list, map, object, set. Una variable sin default es obligatoria.",
       "difficulty": "basic",
-      "tags": ["variables", "inputs"]
+      "tags": ["cert", "variables"]
     },
     {
       "id": "resources-modules-003",
-      "question": "¿Qué es un `output` en Terraform?",
-      "answer": "Valor exportado de la configuración que se muestra tras apply. Permite exponer información de los recursos creados o pasar datos entre módulos.",
-      "explanation": "Ejemplo: output \"instance_ip\" { value = aws_instance.web.public_ip }. Los outputs se ven con terraform output. Entre módulos: module.vpc.vpc_id accede al output vpc_id del módulo vpc.",
+      "question": "¿Qué es un `output` en Terraform y cuándo se usa?",
+      "answer": "Valor exportado que se muestra tras `terraform apply`. Se usa para exponer información de los recursos creados o para pasar datos entre módulos.",
+      "explanation": "Ejemplo: `output \"instance_ip\" { value = aws_instance.web.public_ip }`. Los outputs se ven con `terraform output`. Entre módulos: `module.vpc.vpc_id` accede al output `vpc_id` del módulo `vpc`.",
       "difficulty": "basic",
-      "tags": ["outputs"]
+      "tags": ["cert", "outputs"]
     },
     {
       "id": "resources-modules-004",
-      "question": "¿Qué son los `locals` en Terraform?",
-      "answer": "Valores calculados internamente dentro de la configuración. Permiten reutilizar expresiones sin repetirlas. Se declaran con `locals { }` y se usan como `local.nombre`.",
-      "explanation": "Ejemplo: locals { name_prefix = \"${var.env}-app\" }. Los locals no pueden pasarse desde fuera como las variables; son internos a la configuración o módulo.",
+      "question": "¿Qué son los `locals` en Terraform y cuándo son preferibles a las variables?",
+      "answer": "Valores calculados internamente en la configuración o módulo. Se declaran con `locals {}` y se usan como `local.nombre`. Son preferibles cuando el valor no debe pasarse desde fuera.",
+      "explanation": "Ejemplo: `locals { name_prefix = \"${var.env}-${var.app}\" }`. A diferencia de variables, los locals no pueden pasarse como parámetros. Son útiles para centralizar expresiones repetidas o cálculos intermedios.",
       "difficulty": "intermediate",
-      "tags": ["locals"]
+      "tags": ["cert", "locals"]
     },
     {
       "id": "resources-modules-005",
       "question": "¿Qué es un `data source` en Terraform?",
-      "answer": "Permite leer información de recursos existentes que no gestiona la configuración actual. Usa bloque `data`. Ej: consultar una AMI de AWS por nombre.",
-      "explanation": "Ejemplo: data \"aws_ami\" \"ubuntu\" { most_recent = true, filter { name = \"name\", values = [\"ubuntu-*\"] } }. Se referencia como data.aws_ami.ubuntu.id. No crea ni modifica recursos.",
+      "answer": "Bloque que permite leer información de recursos existentes o APIs sin crear ni modificar nada. Se declara con `data \"tipo\" \"nombre\"` y se referencia como `data.tipo.nombre.atributo`.",
+      "explanation": "Ejemplo: `data \"aws_ami\" \"ubuntu\" { most_recent = true filter { name = \"name\" values = [\"ubuntu-*\"] } }`. Los data sources se evalúan durante el plan. Son de solo lectura: nunca crean, modifican ni destruyen recursos.",
       "difficulty": "intermediate",
-      "tags": ["data-sources"]
+      "tags": ["cert", "data-sources"]
     },
     {
       "id": "resources-modules-006",
       "question": "¿Qué es un módulo en Terraform?",
-      "answer": "Contenedor de recursos reutilizables agrupados en una carpeta. Permite abstraer y reutilizar configuraciones complejas con una interfaz de variables y outputs.",
-      "explanation": "El directorio raíz es el 'root module'. Módulos hijos se llaman con bloque `module`. Pueden venir del filesystem local, Terraform Registry o Git.",
-      "difficulty": "intermediate",
-      "tags": ["modulos"]
+      "answer": "Contenedor de recursos agrupados en un directorio. El directorio raíz es el 'root module'. Los módulos hijos se invocan con el bloque `module`. Permiten reutilización y abstracción.",
+      "explanation": "Los módulos pueden venir de: filesystem local (`./modules/vpc`), Terraform Registry (`hashicorp/vpc/aws`), Git, o registries privados. Un módulo expone variables de input y outputs para comunicarse con el módulo padre.",
+      "difficulty": "basic",
+      "tags": ["cert", "modulos"]
     },
     {
       "id": "resources-modules-007",
-      "question": "¿Qué son las `depends_on` en un resource?",
-      "answer": "Meta-argumento que fuerza una dependencia explícita entre recursos cuando Terraform no puede detectarla automáticamente por referencias.",
-      "explanation": "Terraform detecta dependencias implícitas cuando un recurso usa el valor de otro (aws_instance.web.id). depends_on es para dependencias que no se expresan a través de valores.",
+      "question": "¿Cuándo usar `depends_on` explícitamente?",
+      "answer": "Solo cuando existe una dependencia entre recursos que Terraform no puede detectar automáticamente a través de referencias de valores (dependencias implícitas).",
+      "explanation": "Terraform detecta dependencias implícitas cuando un recurso usa el valor de otro. `depends_on` es para dependencias que no se expresan como referencias (ej: una política de bucket S3 que debe existir antes de que una función Lambda pueda ejecutarse, pero Lambda no referencia la política directamente).",
       "difficulty": "intermediate",
-      "tags": ["resources", "dependencias"]
+      "tags": ["cert", "resources", "dependencias"]
     },
     {
       "id": "resources-modules-008",
-      "question": "¿Qué hace el meta-argumento `count` en un resource?",
-      "answer": "Crea múltiples instancias del mismo recurso. `count = 3` crea 3 instancias accesibles como recurso[0], recurso[1], recurso[2].",
-      "explanation": "Ejemplo: resource \"aws_instance\" \"web\" { count = 3, ami = var.ami }. Se accede con aws_instance.web[0].id. Para listas dinámicas, for_each es más flexible que count.",
+      "question": "¿Qué hace el meta-argument `count` en un resource?",
+      "answer": "Crea N instancias del mismo recurso. Las instancias se identifican por índice entero: `recurso[0]`, `recurso[1]`, etc. `count.index` da el índice actual dentro del recurso.",
+      "explanation": "Ejemplo: `resource \"aws_instance\" \"web\" { count = 3 }` crea 3 instancias accesibles como `aws_instance.web[0]`, `aws_instance.web[1]`, `aws_instance.web[2]`. Con `count = 0` el recurso no se crea (útil para condicionales).",
       "difficulty": "intermediate",
-      "tags": ["resources", "count"]
+      "tags": ["cert", "resources", "count"]
     },
     {
       "id": "resources-modules-009",
-      "question": "¿Qué diferencia hay entre `count` y `for_each`?",
-      "answer": "`count` crea recursos por número (índice entero). `for_each` itera sobre un map o set, identificando recursos por clave (string) — más estable ante cambios en la colección.",
-      "explanation": "Con count, si eliminas el elemento 0 de una lista de 3, los elementos 1 y 2 se renumeran causando destrucción/recreación. Con for_each, cada elemento se identifica por clave y es estable.",
-      "difficulty": "advanced",
-      "tags": ["resources", "count", "for_each"]
+      "question": "¿Cuál es la diferencia fundamental entre `count` y `for_each` para crear múltiples recursos?",
+      "answer": "`count` usa índices numéricos; si eliminas un elemento del medio, todos los posteriores se renumeran, causando recreaciones. `for_each` usa claves string estables; solo el elemento eliminado se destruye.",
+      "explanation": "Ejemplo: lista de 3 usuarios [alice, bob, carol]. Con count si eliminas bob (índice 1), carol pasa de índice 2 a 1, forzando destrucción y recreación de carol. Con for_each, cada usuario es clave estable y solo bob se destruye.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "count", "for_each"]
     },
     {
       "id": "resources-modules-010",
-      "question": "¿Qué son los archivos `.tfvars`?",
-      "answer": "Archivos que contienen valores de variables de input. Terraform carga automáticamente `terraform.tfvars` y `*.auto.tfvars`. Otros se pasan con `-var-file=nombre.tfvars`.",
-      "explanation": "Ejemplo: terraform.tfvars contiene: region = \"us-west-2\", instance_type = \"t3.small\". Permiten tener distintos valores para distintos entornos sin modificar la configuración principal.",
+      "question": "¿Qué tipos acepta `for_each` en un resource?",
+      "answer": "`for_each` acepta un `map` o un `set(string)`. No acepta listas directamente. Para una lista, convertirla con `toset(var.lista)` si los elementos son únicos.",
+      "explanation": "Con map: `for_each = { alice = \"t3.micro\", bob = \"t3.small\" }`. Se accede con `each.key` y `each.value`. Con set: `for_each = toset([\"alice\", \"bob\"])`. Se accede con `each.key` (= `each.value` en sets).",
       "difficulty": "intermediate",
-      "tags": ["variables", "tfvars"]
+      "tags": ["cert", "resources", "for_each"]
+    },
+    {
+      "id": "resources-modules-011",
+      "question": "¿Cuáles son los archivos de variables que Terraform carga automáticamente?",
+      "answer": "`terraform.tfvars`, `terraform.tfvars.json` y cualquier archivo con extensión `*.auto.tfvars` o `*.auto.tfvars.json`. Otros archivos .tfvars se pasan explícitamente con `-var-file`.",
+      "explanation": "Precedencia (del menor al mayor): defaults de variables → archivos .tfvars automáticos → -var-file → -var en CLI → TF_VAR_*. Los valores definidos más tarde sobrescriben los anteriores.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "variables", "tfvars"]
+    },
+    {
+      "id": "resources-modules-012",
+      "question": "¿Qué diferencia hay entre `terraform get` y `terraform init` respecto a los módulos?",
+      "answer": "`terraform get` solo descarga los módulos declarados en la configuración. `terraform init` hace todo: descarga providers, configura el backend Y descarga módulos.",
+      "explanation": "`terraform get` es útil para actualizar solo módulos sin re-inicializar providers o backend. En la mayoría de casos, `terraform init` es suficiente y preferible por ser completo.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "modulos", "comandos"]
+    },
+    {
+      "id": "resources-modules-013",
+      "question": "¿Cómo se accede a un output de un módulo hijo desde el módulo padre?",
+      "answer": "Con la sintaxis `module.nombre_modulo.nombre_output`. Ejemplo: si el módulo `vpc` tiene un output `vpc_id`, se accede como `module.vpc.vpc_id`.",
+      "explanation": "Los outputs del módulo hijo actúan como las 'API pública' del módulo. Solo los valores declarados en bloques `output {}` del módulo hijo son accesibles desde el padre. Los recursos internos del módulo no son accesibles directamente.",
+      "difficulty": "basic",
+      "tags": ["cert", "modulos", "outputs"]
+    },
+    {
+      "id": "resources-modules-014",
+      "question": "¿Qué es el `sensitive = true` en una variable de input?",
+      "answer": "Marca el valor de la variable como sensible: Terraform lo oculta en la salida de plan/apply (muestra `(sensitive value)`) pero el valor sigue presente en el state y en memoria.",
+      "explanation": "IMPORTANTE: `sensitive = true` oculta el valor en la salida de CLI, pero NO lo cifra en el state file. El state puede contener el valor en texto plano. Para valores que nunca deben persistirse, ver `ephemeral` (módulo secrets-ephemeral).",
+      "difficulty": "intermediate",
+      "tags": ["cert", "variables", "seguridad"]
+    },
+    {
+      "id": "resources-modules-015",
+      "question": "¿Cuándo evalúa Terraform los `data sources`?",
+      "answer": "Durante el plan, si todos los valores necesarios para la consulta son conocidos. Si dependen de valores que se conocerán solo tras el apply, se evalúan durante el apply.",
+      "explanation": "Si un data source depende de un atributo de otro recurso que aún no existe (known after apply), Terraform no puede evaluarlo en el plan y lo hace después de crear el recurso. Esto puede afectar el plan: el resultado del data source será desconocido.",
+      "difficulty": "advanced",
+      "tags": ["cert", "data-sources"]
+    },
+    {
+      "id": "resources-modules-016",
+      "question": "¿Qué es el módulo raíz (root module) en Terraform?",
+      "answer": "El directorio de trabajo donde se ejecutan los comandos de Terraform. Todos los archivos .tf del directorio raíz forman el módulo raíz. Es el punto de entrada de la configuración.",
+      "explanation": "Los módulos hijos se invocan desde el root module (o desde otros módulos hijos). El root module es el único que tiene acceso directo al state y backend. Los módulos hijos no pueden acceder al state directamente.",
+      "difficulty": "basic",
+      "tags": ["cert", "modulos", "fundamentos"]
+    },
+    {
+      "id": "resources-modules-017",
+      "question": "¿Cómo se declara el `source` de un módulo del Terraform Registry en el bloque `module`?",
+      "answer": "Con el formato `namespace/nombre/proveedor`. Ejemplo: `source = \"hashicorp/consul/aws\"`. Se puede agregar `version` para fijar la versión del módulo.",
+      "explanation": "Es importante incluir `version` en módulos del Registry para evitar que actualizaciones del módulo rompan la configuración. Con `source = \"hashicorp/consul/aws\"` y `version = \"0.1.0\"`, se usa esa versión exacta.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "modulos", "registry"]
+    },
+    {
+      "id": "resources-modules-018",
+      "question": "¿Qué es el meta-argument `lifecycle` en un resource?",
+      "answer": "Bloque que controla el comportamiento de ciclo de vida del recurso: `create_before_destroy`, `prevent_destroy`, `ignore_changes` y `replace_triggered_by`.",
+      "explanation": "Ejemplo: `lifecycle { prevent_destroy = true }` evita que terraform destroy elimine el recurso. `ignore_changes = [tags]` hace que Terraform ignore cambios en el atributo tags aunque cambien externamente.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "resources-modules-019",
+      "question": "¿Qué hace `ignore_changes` en el bloque `lifecycle`?",
+      "answer": "Indica a Terraform que ignore cambios en atributos específicos durante el plan. Si esos atributos cambian (externamente o por la configuración), Terraform no planificará actualizaciones para ellos.",
+      "explanation": "Ejemplo: `lifecycle { ignore_changes = [tags, last_modified] }`. Útil cuando otros sistemas modifican ciertos atributos (ej: etiquetas gestionadas por otro equipo) y no quieres que Terraform los revierta. Con `ignore_changes = all`, ignora todos los cambios.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "resources-modules-020",
+      "question": "¿Qué es `nullable = false` en la declaración de una variable?",
+      "answer": "Especifica que la variable no puede tener el valor `null`. Si se pasa null, Terraform usa el `default` si existe, o falla si no hay default.",
+      "explanation": "Por defecto `nullable = true`, lo que significa que se puede pasar null explícitamente como valor. Con `nullable = false`, null actúa como 'usa el default'. Útil para variables críticas que deben tener siempre un valor.",
+      "difficulty": "advanced",
+      "tags": ["cert", "variables"]
+    },
+    {
+      "id": "resources-modules-021",
+      "question": "¿Qué hace `create_before_destroy = true` en el bloque `lifecycle`?",
+      "answer": "Cambia el orden por defecto de operaciones: primero crea el nuevo recurso, luego destruye el antiguo. Útil cuando el proveedor no permite dos recursos con el mismo nombre simultáneamente.",
+      "explanation": "Ejemplo: al cambiar el nombre de un Load Balancer en AWS, el nombre debe ser único. Con create_before_destroy = true, el nuevo LB se crea primero, el tráfico se redirige, y luego el viejo se destruye. Sin esto, primero se destruye y hay downtime.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "resources-modules-022",
+      "question": "¿Qué hace el meta-argument `provider` en un resource?",
+      "answer": "Especifica qué configuración de provider debe usar el recurso, útil cuando hay múltiples instancias del mismo provider (con alias).",
+      "explanation": "Ejemplo: `resource \"aws_s3_bucket\" \"eu\" { provider = aws.eu_west }`. Si no se especifica, el recurso usa el provider default (sin alias). Es obligatorio cuando hay múltiples providers del mismo tipo con alias.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "providers"]
+    },
+    {
+      "id": "resources-modules-023",
+      "question": "¿Cómo validas el valor de una variable con el bloque `validation`?",
+      "answer": "Con un bloque `validation` dentro de la declaración de la variable, especificando `condition` (expresión booleana) y `error_message` (mensaje si la condición falla).",
+      "explanation": "Ejemplo: `variable \"environment\" { type = string validation { condition = contains([\"dev\",\"staging\",\"prod\"], var.environment) error_message = \"environment debe ser dev, staging o prod\" } }`. La validación ocurre antes del plan.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "variables", "validacion"]
+    },
+    {
+      "id": "resources-modules-024",
+      "question": "¿Cuál es la precedencia de valores de variables en Terraform (del menor al mayor)?",
+      "answer": "1. Valor `default` en la declaración. 2. `terraform.tfvars`. 3. `*.auto.tfvars`. 4. `-var-file` en CLI. 5. `-var` en CLI. 6. Variable de entorno `TF_VAR_*`.",
+      "explanation": "Los valores más específicos (CLI) sobreescriben los más generales (defaults). Esto permite tener defaults seguros en el código y sobreescribirlos en entornos específicos sin cambiar el código.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "variables", "tfvars"]
+    },
+    {
+      "id": "resources-modules-025",
+      "question": "¿Qué diferencia hay entre `sensitive = true` en un output y en una variable?",
+      "answer": "En un output: oculta el valor cuando se muestra en CLI y lo propaga como sensitive a los recursos que lo consumen. En una variable: oculta el valor en la salida del plan pero no garantiza propagación.",
+      "explanation": "Si un output tiene `sensitive = true`, Terraform también marca como sensibles los atributos de recursos que consumen ese output. La propagación de sensitividad es más completa en outputs que en variables.",
+      "difficulty": "advanced",
+      "tags": ["cert", "outputs", "variables", "seguridad"]
+    },
+    {
+      "id": "resources-modules-026",
+      "question": "¿Cuándo Terraform destruye y recrea un recurso en lugar de modificarlo en sitio?",
+      "answer": "Cuando se cambia un atributo marcado como `ForceNew` por el provider (no se puede modificar en sitio). Terraform muestra el cambio como `-/+` en el plan.",
+      "explanation": "Ejemplo: cambiar el `ami` de una instancia EC2 requiere destrucción y recreación (ForceNew). Cambiar el `instance_type` puede hacerse en sitio (stop, modify, start). La decisión la toma el provider, no Terraform.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "resources-modules-027",
+      "question": "¿Qué es el `depends_on` en un output?",
+      "answer": "Meta-argument en un output que declara dependencias explícitas, asegurando que el output no se calcula hasta que los recursos especificados en depends_on estén completamente creados.",
+      "explanation": "Útil cuando el valor del output no depende directamente de un atributo del recurso (dependencia implícita) pero sí requiere que ese recurso exista. Evita que módulos padre asuman que un recurso está listo antes de que lo esté.",
+      "difficulty": "advanced",
+      "tags": ["cert", "outputs", "dependencias"]
+    },
+    {
+      "id": "resources-modules-028",
+      "question": "¿Qué ocurre si usas `count = 0` en un resource?",
+      "answer": "El recurso no se crea. Es un patrón para condicionar la creación de recursos: `count = var.create_resource ? 1 : 0`.",
+      "explanation": "Con count = 0, el recurso existe en la configuración pero no se crea. Al cambiar a count = 1, se crea. Al cambiar de 1 a 0, se destruye. Es la forma clásica de condicionamiento antes de for_each.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "count"]
+    },
+    {
+      "id": "resources-modules-029",
+      "question": "¿Cómo se referencia un recurso creado con `for_each`?",
+      "answer": "Con la sintaxis `tipo_recurso.nombre[\"clave\"]`. Ejemplo: si `for_each = {alice = ..., bob = ...}`, se referencia como `aws_iam_user.users[\"alice\"].arn`.",
+      "explanation": "Con count se usa índice numérico: recurso[0]. Con for_each se usa clave string: recurso[\"clave\"]. Si la clave contiene caracteres especiales, puede necesitar comillas escapadas.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "for_each"]
+    },
+    {
+      "id": "resources-modules-030",
+      "question": "¿Cuándo es preferible usar módulos en lugar de repetir recursos directamente?",
+      "answer": "Cuando el mismo patrón de recursos se usa en múltiples lugares del código (DRY: Don't Repeat Yourself), cuando se quiere abstraer complejidad, o cuando se quiere reutilizar entre proyectos.",
+      "explanation": "Un módulo encapsula recursos relacionados con una interfaz clara (variables de input y outputs). Sin módulos, si cambias un patrón repetido en 10 lugares, debes actualizarlo 10 veces. Un módulo permite actualizar en un lugar.",
+      "difficulty": "basic",
+      "tags": ["cert", "modulos", "fundamentos"]
     }
   ],
   "quiz": {
-    "passingScore": 80,
+    "passingScore": 85,
     "questions": [
       {
         "id": "resources-modules-q001",
         "type": "single-choice",
-        "question": "¿Cómo se referencia el valor de una variable de input llamada `region` en Terraform?",
+        "question": "¿Cómo se referencia el valor de una variable de input llamada `instance_type` dentro de la configuración?",
         "options": [
-          { "id": "a", "text": "variable.region" },
-          { "id": "b", "text": "input.region" },
-          { "id": "c", "text": "var.region" },
-          { "id": "d", "text": "${region}" }
+          { "id": "a", "text": "input.instance_type" },
+          { "id": "b", "text": "variable.instance_type" },
+          { "id": "c", "text": "var.instance_type" },
+          { "id": "d", "text": "${instance_type}" }
         ],
         "correctAnswers": ["c"],
-        "explanation": "Las variables de input se referencian con el prefijo var. La sintaxis correcta es var.region.",
-        "tags": ["variables"]
+        "explanation": "Las variables de input se referencian con el prefijo var. La sintaxis correcta es var.instance_type.",
+        "tags": ["cert", "variables"]
       },
       {
         "id": "resources-modules-q002",
         "type": "single-choice",
-        "question": "¿Cuál es la diferencia principal entre un `output` y un `local` en Terraform?",
+        "question": "¿Cuál es la principal ventaja de `for_each` sobre `count` para crear múltiples recursos?",
         "options": [
-          { "id": "a", "text": "Los outputs son visibles desde fuera del módulo; los locals son internos" },
-          { "id": "b", "text": "Los locals son más rápidos de calcular que los outputs" },
-          { "id": "c", "text": "Los outputs se guardan en el state; los locals no" },
-          { "id": "d", "text": "No hay diferencia, son equivalentes" }
+          { "id": "a", "text": "for_each tiene mejor rendimiento de ejecución" },
+          { "id": "b", "text": "for_each usa claves string estables; eliminar un elemento no afecta a los demás" },
+          { "id": "c", "text": "count no funciona con recursos de AWS" },
+          { "id": "d", "text": "for_each puede crear más de 100 recursos; count está limitado a 100" }
         ],
-        "correctAnswers": ["a"],
-        "explanation": "Los outputs exponen valores al exterior (se muestran tras apply, son accesibles desde módulos padre). Los locals son valores calculados internos, no accesibles desde fuera del módulo.",
-        "tags": ["outputs", "locals"]
+        "correctAnswers": ["b"],
+        "explanation": "Con count, los recursos se identifican por índice numérico. Eliminar un elemento intermedio renumera los posteriores, causando recreaciones. Con for_each, cada recurso tiene una clave estable y solo el elemento eliminado se afecta.",
+        "tags": ["cert", "resources", "for_each"]
       },
       {
         "id": "resources-modules-q003",
         "type": "single-choice",
         "question": "¿Para qué se usa un `data source` en Terraform?",
         "options": [
-          { "id": "a", "text": "Para crear recursos en el proveedor" },
-          { "id": "b", "text": "Para leer información de recursos existentes sin crearlos ni modificarlos" },
+          { "id": "a", "text": "Para crear nuevos recursos en el proveedor" },
+          { "id": "b", "text": "Para leer información de recursos existentes sin modificarlos" },
           { "id": "c", "text": "Para almacenar el state de forma remota" },
-          { "id": "d", "text": "Para definir variables de entrada" }
+          { "id": "d", "text": "Para exportar valores de la configuración" }
         ],
         "correctAnswers": ["b"],
-        "explanation": "Los data sources permiten consultar información de recursos ya existentes. No crean, modifican ni destruyen recursos. Son de solo lectura.",
-        "tags": ["data-sources"]
+        "explanation": "Los data sources leen información de recursos existentes (AMIs, zonas DNS, IDs de VPC...) sin crearlos ni modificarlos. Son de solo lectura.",
+        "tags": ["cert", "data-sources"]
       },
       {
         "id": "resources-modules-q004",
         "type": "multiple-choice",
-        "question": "¿Cuáles son formas válidas de pasar valores a variables de input en Terraform? (selecciona todas las correctas)",
+        "question": "¿Cuáles son formas válidas de pasar valores a variables de input? (selecciona todas las correctas)",
         "options": [
           { "id": "a", "text": "Archivo terraform.tfvars" },
           { "id": "b", "text": "Flag -var en la línea de comandos" },
           { "id": "c", "text": "Variable de entorno TF_VAR_nombre" },
-          { "id": "d", "text": "Directamente en el bloque resource" },
+          { "id": "d", "text": "Modificando directamente el bloque resource" },
           { "id": "e", "text": "Archivo *.auto.tfvars" }
         ],
         "correctAnswers": ["a", "b", "c", "e"],
-        "explanation": "Las variables se pueden pasar por: terraform.tfvars (automático), *.auto.tfvars (automático), -var en CLI, TF_VAR_nombre como variable de entorno, o -var-file=archivo.tfvars.",
-        "tags": ["variables", "tfvars"]
+        "explanation": "Las variables pueden pasarse por terraform.tfvars (automático), *.auto.tfvars (automático), -var en CLI, TF_VAR_nombre como variable de entorno, o -var-file explícito. Los bloques resource no son el lugar para valores de variables.",
+        "tags": ["cert", "variables", "tfvars"]
       },
       {
         "id": "resources-modules-q005",
         "type": "single-choice",
-        "question": "¿Por qué `for_each` es generalmente preferible a `count` para crear múltiples recursos?",
+        "question": "Un módulo tiene el output `vpc_id`. ¿Cómo se accede a ese output desde el módulo padre si el módulo fue declarado como `module \"vpc\" {}`?",
         "options": [
-          { "id": "a", "text": "for_each es más rápido de ejecutar" },
-          { "id": "b", "text": "for_each identifica recursos por clave estable, no por índice numérico" },
-          { "id": "c", "text": "count no está disponible en versiones recientes de Terraform" },
-          { "id": "d", "text": "for_each usa menos memoria" }
+          { "id": "a", "text": "vpc.vpc_id" },
+          { "id": "b", "text": "output.vpc.vpc_id" },
+          { "id": "c", "text": "module.vpc.vpc_id" },
+          { "id": "d", "text": "module.output.vpc_id" }
         ],
-        "correctAnswers": ["b"],
-        "explanation": "Con count, eliminar un elemento de una lista renumera todos los posteriores causando recreaciones innecesarias. for_each usa claves string estables, solo afecta el elemento modificado.",
-        "tags": ["resources", "for_each"]
+        "correctAnswers": ["c"],
+        "explanation": "Los outputs de un módulo hijo se acceden con module.nombre_modulo.nombre_output. En este caso: module.vpc.vpc_id.",
+        "tags": ["cert", "modulos", "outputs"]
       },
       {
         "id": "resources-modules-q006",
         "type": "true-false",
-        "question": "Un módulo de Terraform puede tomar outputs de otro módulo como inputs.",
+        "question": "Con `for_each`, si eliminas un elemento de la mitad de un map, Terraform recreará todos los recursos cuyos índices cambien.",
         "options": [
           { "id": "true", "text": "Verdadero" },
           { "id": "false", "text": "Falso" }
         ],
-        "correctAnswers": ["true"],
-        "explanation": "Los outputs de un módulo hijo son accesibles en el módulo padre como module.nombre_modulo.nombre_output. Así se compone la infraestructura entre módulos.",
-        "tags": ["modulos", "outputs"]
+        "correctAnswers": ["false"],
+        "explanation": "Ese es el comportamiento de count (índices numéricos). Con for_each, los recursos se identifican por clave string estable. Eliminar un elemento del map solo destruye ese elemento; los demás no se ven afectados.",
+        "tags": ["cert", "resources", "for_each"]
       },
       {
         "id": "resources-modules-q007",
         "type": "single-choice",
         "question": "¿Cuándo es necesario usar `depends_on` en un resource?",
         "options": [
-          { "id": "a", "text": "Siempre, para ser explícito sobre las dependencias" },
-          { "id": "b", "text": "Cuando hay una dependencia que no se puede expresar a través de referencias de valores" },
+          { "id": "a", "text": "Siempre que un recurso use valores de otro recurso" },
+          { "id": "b", "text": "Solo cuando Terraform no puede detectar automáticamente la dependencia a través de referencias de valores" },
           { "id": "c", "text": "Solo al usar módulos externos del Registry" },
-          { "id": "d", "text": "Cuando se usa count o for_each" }
+          { "id": "d", "text": "Cada vez que se use count o for_each" }
         ],
         "correctAnswers": ["b"],
-        "explanation": "Terraform detecta automáticamente las dependencias cuando un recurso usa el valor de otro. depends_on solo es necesario para dependencias implícitas que no se expresan como referencias.",
-        "tags": ["resources", "dependencias"]
+        "explanation": "Terraform detecta dependencias implícitas cuando un recurso usa el atributo de otro. depends_on solo es necesario para dependencias que no se expresan como referencias de valores (dependencias de comportamiento, no de datos).",
+        "tags": ["cert", "resources", "dependencias"]
+      },
+      {
+        "id": "resources-modules-q008",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia principal entre una variable de input y un local en Terraform?",
+        "options": [
+          { "id": "a", "text": "Los locals pueden ser de cualquier tipo; las variables solo de string" },
+          { "id": "b", "text": "Las variables pueden pasarse desde fuera; los locals son internos al módulo y no pueden pasarse como parámetros" },
+          { "id": "c", "text": "Los locals se guardan en el state; las variables no" },
+          { "id": "d", "text": "Solo las variables aceptan tipos complejos como list y map" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Las variables de input son la interfaz pública del módulo: se pasan al invocar el módulo. Los locals son internos: calculados dentro del módulo para uso interno, no accesibles ni sobreescribibles desde fuera.",
+        "tags": ["cert", "variables", "locals"]
+      },
+      {
+        "id": "resources-modules-q009",
+        "type": "single-choice",
+        "question": "What does `lifecycle { prevent_destroy = true }` do in a Terraform resource?",
+        "options": [
+          { "id": "a", "text": "It prevents the resource from being modified" },
+          { "id": "b", "text": "It causes terraform destroy to fail with an error for this specific resource" },
+          { "id": "c", "text": "It moves the resource to a protected workspace" },
+          { "id": "d", "text": "It prevents any changes to the resource including creates" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "lifecycle { prevent_destroy = true } causes Terraform to return an error if a plan would destroy this resource. It protects critical resources (like production databases) from accidental deletion. It can be removed temporarily to allow destruction.",
+        "tags": ["cert", "resources", "lifecycle"]
+      },
+      {
+        "id": "resources-modules-q010",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes fuentes son válidas para el `source` de un bloque `module`? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Directorio local: `./modules/vpc`" },
+          { "id": "b", "text": "Terraform Registry: `hashicorp/vpc/aws`" },
+          { "id": "c", "text": "Repositorio Git: `git::https://github.com/org/repo.git`" },
+          { "id": "d", "text": "Bloque de datos: `data.aws_vpc.main`" },
+          { "id": "e", "text": "Bucket S3: `s3::https://s3.amazonaws.com/bucket/module.zip`" }
+        ],
+        "correctAnswers": ["a", "b", "c", "e"],
+        "explanation": "Los módulos pueden venir de: filesystem local, Terraform Registry, Git (https o ssh), GitHub, Bitbucket, HTTP URLs, y S3 buckets. Un data source no es una fuente de módulo.",
+        "tags": ["cert", "modulos", "registry"]
+      },
+      {
+        "id": "resources-modules-q011",
+        "type": "single-choice",
+        "question": "¿Qué sucede al cambiar el atributo `ami` de una `aws_instance` existente en la configuración?",
+        "options": [
+          { "id": "a", "text": "La instancia se actualiza en sitio sin interrupción" },
+          { "id": "b", "text": "Terraform muestra un error porque ami no puede cambiarse" },
+          { "id": "c", "text": "La instancia se destruye y se recrea con la nueva AMI (ForceNew)" },
+          { "id": "d", "text": "Terraform ignora el cambio de AMI en instancias existentes" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Cambiar la AMI de una instancia EC2 requiere destrucción y recreación (el atributo está marcado como ForceNew por el provider de AWS). Terraform lo muestra como -/+ en el plan. Esto implica downtime.",
+        "tags": ["cert", "resources", "lifecycle"]
+      },
+      {
+        "id": "resources-modules-q012",
+        "type": "single-choice",
+        "question": "¿Para qué sirve `count = var.create ? 1 : 0` en un resource?",
+        "options": [
+          { "id": "a", "text": "Crea el recurso con mayor o menor prioridad según la variable" },
+          { "id": "b", "text": "Condiciona la creación del recurso: lo crea si create es true, no lo crea si es false" },
+          { "id": "c", "text": "Crea una réplica adicional del recurso cuando create es true" },
+          { "id": "d", "text": "Determina cuántas veces se ejecuta el plan para ese recurso" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "count = 0 hace que el recurso no se cree. count = 1 crea una instancia. Al usar `var.create ? 1 : 0`, si create es true crea el recurso, si es false no lo crea. Es el patrón clásico para recursos condicionales con count.",
+        "tags": ["cert", "resources", "count"]
+      },
+      {
+        "id": "resources-modules-q013",
+        "type": "true-false",
+        "question": "Un módulo del Terraform Registry puede usarse sin especificar `version`, y Terraform siempre descargará la última versión disponible.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Es técnicamente verdadero pero es una mala práctica. Sin version, terraform init descarga la última versión, lo que puede romper la configuración si el módulo lanza una versión con cambios breaking. Siempre se debe especificar version en módulos del Registry.",
+        "tags": ["cert", "modulos", "registry"]
+      },
+      {
+        "id": "resources-modules-q014",
+        "type": "single-choice",
+        "question": "¿Qué acepta `for_each` que `count` no acepta directamente?",
+        "options": [
+          { "id": "a", "text": "Números enteros" },
+          { "id": "b", "text": "Maps y sets, donde cada recurso se identifica por clave" },
+          { "id": "c", "text": "Valores booleanos" },
+          { "id": "d", "text": "Referencias a otros recursos" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "for_each acepta map o set(string). Cada recurso se identifica por su clave (each.key). count acepta números enteros y los recursos se identifican por índice numérico. No se pueden usar ambos en el mismo resource.",
+        "tags": ["cert", "resources", "for_each"]
+      },
+      {
+        "id": "resources-modules-q015",
+        "type": "single-choice",
+        "question": "An engineer needs to create an IAM user for each item in a list: `[\"alice\", \"bob\", \"carol\"]`. Which Terraform construct is most appropriate and why?",
+        "options": [
+          { "id": "a", "text": "count = 3, because it's simpler" },
+          { "id": "b", "text": "for_each = toset([\"alice\", \"bob\", \"carol\"]), because each user has a stable key" },
+          { "id": "c", "text": "count = length(var.users), because it uses the list length" },
+          { "id": "d", "text": "Three separate resource blocks, one per user" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "for_each with toset() is preferred because each IAM user is identified by name (stable key). If bob is removed from the list, only bob's user is destroyed. With count, removing bob (index 1) causes carol to shift from index 2 to 1, triggering a needless recreation.",
+        "tags": ["cert", "resources", "for_each"]
+      },
+      {
+        "id": "resources-modules-q016",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son meta-arguments válidos en un bloque `resource`? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "count" },
+          { "id": "b", "text": "for_each" },
+          { "id": "c", "text": "depends_on" },
+          { "id": "d", "text": "lifecycle" },
+          { "id": "e", "text": "source" }
+        ],
+        "correctAnswers": ["a", "b", "c", "d"],
+        "explanation": "Los meta-arguments de un resource son: count, for_each, depends_on, provider y lifecycle. `source` es un argumento del bloque `module`, no de `resource`.",
+        "tags": ["cert", "resources"]
+      },
+      {
+        "id": "resources-modules-q017",
+        "type": "single-choice",
+        "question": "¿Qué diferencia tiene un output con `sensitive = true` respecto a uno sin esa marca?",
+        "options": [
+          { "id": "a", "text": "El valor sensitive se cifra en el state" },
+          { "id": "b", "text": "El valor sensitive se oculta en la salida de CLI pero sigue presente en el state" },
+          { "id": "c", "text": "El output sensitive no puede usarse como input de otro recurso" },
+          { "id": "d", "text": "terraform output nunca muestra el valor de un output sensitive" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "sensitive = true oculta el valor en la salida del plan/apply/output CLI (muestra (sensitive value)), pero el valor sigue almacenado en texto plano en el state file. No cifra nada. Se puede ver con terraform output -json o inspeccionando el state.",
+        "tags": ["cert", "outputs", "seguridad"]
+      },
+      {
+        "id": "resources-modules-q018",
+        "type": "true-false",
+        "question": "Los archivos `.auto.tfvars` se cargan automáticamente por Terraform sin necesidad de especificarlos con `-var-file`.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Los archivos terraform.tfvars, terraform.tfvars.json y *.auto.tfvars / *.auto.tfvars.json se cargan automáticamente. Cualquier otro archivo .tfvars requiere especificarse con -var-file.",
+        "tags": ["cert", "variables", "tfvars"]
+      },
+      {
+        "id": "resources-modules-q019",
+        "type": "single-choice",
+        "question": "¿Cuál de estos bloques se usa para prevenir que Terraform recree un recurso cuando sus cambios de configuración normalmente lo requerirían?",
+        "options": [
+          { "id": "a", "text": "lifecycle { ignore_changes = all }" },
+          { "id": "b", "text": "lifecycle { prevent_destroy = true }" },
+          { "id": "c", "text": "lifecycle { create_before_destroy = true }" },
+          { "id": "d", "text": "depends_on = []" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "ignore_changes = all hace que Terraform ignore todos los cambios de atributos, evitando recreaciones. prevent_destroy solo previene destrucción. create_before_destroy cambia el orden de creación/destrucción. La opción A es la que evita la recreación.",
+        "tags": ["cert", "resources", "lifecycle"]
+      },
+      {
+        "id": "resources-modules-q020",
+        "type": "single-choice",
+        "question": "When should you use `terraform get` instead of `terraform init`?",
+        "options": [
+          { "id": "a", "text": "When you want to download providers without configuring the backend" },
+          { "id": "b", "text": "When you only want to update module sources without re-initializing providers or backend" },
+          { "id": "c", "text": "When you need to upgrade all providers to the latest version" },
+          { "id": "d", "text": "When running Terraform in CI/CD environments" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform get only downloads module sources. terraform init downloads providers, configures the backend, AND downloads modules. Use terraform get when you've already initialized and only need to update modules.",
+        "tags": ["cert", "modulos", "comandos"]
       }
     ]
   }

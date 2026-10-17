@@ -5,9 +5,9 @@
   "language": "es-MX",
   "exam": {
     "id": "final",
-    "name": "Examen Final Terraform Associate 003",
-    "description": "Simulacro del examen oficial TA-003. Cubre conceptos fundamentales, providers, state y recursos.",
-    "passingScore": 70,
+    "name": "Simulacro Terraform Associate (004)",
+    "description": "60 preguntas originales basadas en los objetivos del examen TA-004. passingScore 85% es objetivo interno de preparación, no el criterio oficial de aprobación de HashiCorp.",
+    "passingScore": 85,
     "timeLimit": 60,
     "shuffleQuestions": true,
     "shuffleOptions": true
@@ -17,221 +17,891 @@
       "id": "exam-q001",
       "type": "single-choice",
       "moduleId": "core-concepts",
-      "question": "¿Cuál es el orden correcto del flujo de trabajo de Terraform?",
+      "question": "Un equipo acaba de clonar un repositorio de Terraform con varios archivos .tf. ¿Cuál es el primer comando que deben ejecutar antes de poder usar `terraform plan`?",
       "options": [
-        { "id": "a", "text": "Plan → Write → Apply" },
-        { "id": "b", "text": "Write → Plan → Apply" },
-        { "id": "c", "text": "Init → Apply → Plan" },
-        { "id": "d", "text": "Write → Apply → Destroy" }
+        { "id": "a", "text": "terraform validate" },
+        { "id": "b", "text": "terraform init" },
+        { "id": "c", "text": "terraform fmt" },
+        { "id": "d", "text": "terraform plan -refresh=false" }
       ],
       "correctAnswers": ["b"],
-      "explanation": "El flujo estándar es Write (escribir configuración .tf), Plan (revisar cambios), Apply (ejecutar cambios).",
-      "tags": ["workflow", "fundamentos"]
+      "explanation": "terraform init debe ejecutarse primero para descargar los providers, configurar el backend y preparar el directorio de trabajo. validate y fmt requieren que init ya se haya ejecutado.",
+      "tags": ["cert", "workflow", "init"]
     },
     {
       "id": "exam-q002",
-      "type": "single-choice",
+      "type": "true-false",
       "moduleId": "core-concepts",
-      "question": "¿Qué comando inicializa un directorio de trabajo de Terraform y descarga los providers necesarios?",
+      "question": "Terraform es una herramienta de IaC imperativa: el usuario define los pasos exactos para crear infraestructura.",
       "options": [
-        { "id": "a", "text": "terraform start" },
-        { "id": "b", "text": "terraform setup" },
-        { "id": "c", "text": "terraform init" },
-        { "id": "d", "text": "terraform plan" }
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
       ],
-      "correctAnswers": ["c"],
-      "explanation": "terraform init es siempre el primer comando a ejecutar. Descarga providers, configura el backend y prepara el directorio de trabajo.",
-      "tags": ["comandos", "init"]
+      "correctAnswers": ["false"],
+      "explanation": "Terraform es declarativa: defines el estado final deseado y Terraform determina las operaciones necesarias para alcanzarlo. Las herramientas imperativas como Bash o Ansible (en modo push) requieren definir los pasos.",
+      "tags": ["cert", "iac", "fundamentos"]
     },
     {
       "id": "exam-q003",
-      "type": "true-false",
+      "type": "single-choice",
       "moduleId": "core-concepts",
-      "question": "Terraform es una herramienta de IaC declarativa: defines el estado deseado y Terraform determina cómo alcanzarlo.",
+      "question": "¿Qué significa el símbolo `-/+` en la salida de `terraform plan`?",
+      "options": [
+        { "id": "a", "text": "El recurso se modificará en sitio sin interrupciones" },
+        { "id": "b", "text": "El recurso se destruirá y recreará (replace)" },
+        { "id": "c", "text": "El recurso fue importado al state recientemente" },
+        { "id": "d", "text": "El recurso tiene cambios pendientes de una operación anterior" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "-/+ indica que el recurso será destruido y recreado porque se modificó un atributo ForceNew. Puede implicar downtime. Siempre revisar antes de aprobar un apply con recursos -/+.",
+      "tags": ["cert", "plan", "workflow"]
+    },
+    {
+      "id": "exam-q004",
+      "type": "single-choice",
+      "moduleId": "core-concepts",
+      "question": "Un ingeniero quiere garantizar que en CI/CD se aplique exactamente el plan que fue revisado y aprobado, sin posibles cambios por actividad concurrente. ¿Cómo lo consigue?",
+      "options": [
+        { "id": "a", "text": "Usando terraform apply -auto-approve" },
+        { "id": "b", "text": "Guardando el plan con terraform plan -out=plan.tfplan y aplicándolo con terraform apply plan.tfplan" },
+        { "id": "c", "text": "Usando terraform apply -lock=false para mayor velocidad" },
+        { "id": "d", "text": "No es posible garantizar esto en CI/CD" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "plan -out guarda el plan calculado. apply con el plan file ejecuta exactamente ese plan sin recalcular. Es el patrón estándar en CI/CD para garantizar que se aplica lo revisado.",
+      "tags": ["cert", "prod", "plan", "ci-cd"]
+    },
+    {
+      "id": "exam-q005",
+      "type": "multiple-choice",
+      "moduleId": "core-concepts",
+      "question": "¿Cuáles de las siguientes afirmaciones sobre `terraform validate` son correctas? (selecciona todas las correctas)",
+      "options": [
+        { "id": "a", "text": "Verifica la sintaxis HCL y la consistencia interna de la configuración" },
+        { "id": "b", "text": "No hace llamadas a APIs de proveedores" },
+        { "id": "c", "text": "Verifica que las credenciales del proveedor son válidas" },
+        { "id": "d", "text": "Requiere que terraform init se haya ejecutado previamente" }
+      ],
+      "correctAnswers": ["a", "b", "d"],
+      "explanation": "validate verifica HCL (sintaxis, tipos, referencias) sin llamar APIs externas. Requiere init previo para conocer los schemas de los providers. No verifica credenciales — eso lo hace plan/apply.",
+      "tags": ["cert", "comandos", "validate"]
+    },
+    {
+      "id": "exam-q006",
+      "type": "single-choice",
+      "moduleId": "core-concepts",
+      "question": "¿Qué es 'drift' en el contexto de Terraform?",
+      "options": [
+        { "id": "a", "text": "El tiempo que tarda Terraform en calcular un plan" },
+        { "id": "b", "text": "Diferencia entre el state de Terraform y el estado real de la infraestructura, causado por cambios externos" },
+        { "id": "c", "text": "La migración de un provider a otro" },
+        { "id": "d", "text": "Un error de sincronización entre el estado local y el remoto" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Drift ocurre cuando alguien modifica infraestructura fuera de Terraform (consola, CLI del proveedor). El state de Terraform no refleja la realidad. Se detecta con terraform plan o apply -refresh-only.",
+      "tags": ["cert", "state", "drift"]
+    },
+    {
+      "id": "exam-q007",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "¿Dónde deben declararse las restricciones de versión de los providers en una configuración moderna de Terraform?",
+      "options": [
+        { "id": "a", "text": "En el bloque provider { version = \"...\" }" },
+        { "id": "b", "text": "En el bloque terraform { required_providers { ... } }" },
+        { "id": "c", "text": "En el archivo .terraform.lock.hcl" },
+        { "id": "d", "text": "En variables de entorno TF_PROVIDER_VERSION_*" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Las restricciones de versión van en required_providers dentro del bloque terraform {}. Declarar version en el bloque provider {} está deprecado. .terraform.lock.hcl se genera automáticamente.",
+      "tags": ["cert", "deprecated", "providers", "versiones"]
+    },
+    {
+      "id": "exam-q008",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "El provider AWS está configurado con `version = \"~> 5.1\"`. ¿Cuál de las siguientes versiones sería aceptada?",
+      "options": [
+        { "id": "a", "text": "4.9.9" },
+        { "id": "b", "text": "5.0.9" },
+        { "id": "c", "text": "5.45.0" },
+        { "id": "d", "text": "6.0.0" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "~> 5.1 acepta >= 5.1 y < 6.0. 5.45.0 cumple. 4.9.9 (< 5.1), 5.0.9 (< 5.1) y 6.0.0 (>= 6.0) son rechazadas.",
+      "tags": ["cert", "providers", "versiones"]
+    },
+    {
+      "id": "exam-q009",
+      "type": "true-false",
+      "moduleId": "providers",
+      "question": "El directorio `.terraform/` debe commitearse al repositorio para que todo el equipo use los mismos providers.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["false"],
+      "explanation": ".terraform/ contiene binarios de providers específicos de plataforma. No debe commitearse. El archivo .terraform.lock.hcl sí debe commitearse: garantiza versiones consistentes y cada miembro descarga los binarios al ejecutar init.",
+      "tags": ["cert", "providers", "lock"]
+    },
+    {
+      "id": "exam-q010",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "Un equipo tiene desarrolladores en Mac (arm64) y un servidor CI con Linux (amd64). ¿Cómo garantizan que terraform init funcione en ambas plataformas con versiones consistentes?",
+      "options": [
+        { "id": "a", "text": "Commiteando el directorio .terraform/ al repositorio" },
+        { "id": "b", "text": "Ejecutando terraform providers lock -platform=linux_amd64 -platform=darwin_arm64 y commiteando el .terraform.lock.hcl" },
+        { "id": "c", "text": "Usando terraform init -upgrade en cada máquina" },
+        { "id": "d", "text": "No es posible garantizar consistencia entre plataformas" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "terraform providers lock -platform=X genera hashes para múltiples plataformas en el lock file. Al commitear .terraform.lock.hcl con hashes de ambas plataformas, init verifica los hashes correctos en cada entorno.",
+      "tags": ["cert", "providers", "lock"]
+    },
+    {
+      "id": "exam-q011",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "¿Para qué se usa el atributo `alias` en un bloque `provider`?",
+      "options": [
+        { "id": "a", "text": "Para renombrar el provider en la configuración" },
+        { "id": "b", "text": "Para definir múltiples configuraciones del mismo provider y referenciarlas en recursos específicos" },
+        { "id": "c", "text": "Para indicar que el provider es un alias de otro provider compatible" },
+        { "id": "d", "text": "Para crear un provider de solo lectura" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "alias permite múltiples instancias del mismo provider con diferentes configuraciones (región, cuenta, credenciales). Los recursos referencian el alias con provider = aws.nombre_alias. Sin alias, un provider solo tiene una configuración por tipo.",
+      "tags": ["cert", "providers", "alias"]
+    },
+    {
+      "id": "exam-q012",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Cuál es el mecanismo de state locking recomendado para el backend S3 en Terraform >= 1.10?",
+      "options": [
+        { "id": "a", "text": "Crear una tabla DynamoDB con clave LockID" },
+        { "id": "b", "text": "Usar use_lockfile = true en el bloque del backend" },
+        { "id": "c", "text": "El backend S3 no soporta state locking" },
+        { "id": "d", "text": "Habilitar MFA Delete en el bucket S3" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "use_lockfile = true crea un objeto .tflock en el mismo bucket S3, habilitando locking nativo. El mecanismo con DynamoDB está deprecado. Las nuevas configuraciones deben usar use_lockfile.",
+      "tags": ["cert", "state", "locking"]
+    },
+    {
+      "id": "exam-q013",
+      "type": "true-false",
+      "moduleId": "state",
+      "question": "El mecanismo de locking con DynamoDB para el backend S3 fue completamente eliminado en Terraform 1.10 y ya no funciona.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["false"],
+      "explanation": "DynamoDB locking está DEPRECADO, no eliminado. Sigue funcionando para permitir migración gradual hacia use_lockfile = true. Las configuraciones existentes pueden seguir usándolo mientras migran.",
+      "tags": ["cert", "deprecated", "state", "locking"]
+    },
+    {
+      "id": "exam-q014",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Cuál es la forma moderna de detectar y reconciliar drift en Terraform, reemplazando al deprecado `terraform refresh`?",
+      "options": [
+        { "id": "a", "text": "terraform plan -sync" },
+        { "id": "b", "text": "terraform plan -refresh-only seguido de terraform apply -refresh-only" },
+        { "id": "c", "text": "terraform state sync" },
+        { "id": "d", "text": "terraform apply -detect-drift" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "terraform refresh está deprecado. El flujo moderno es: plan -refresh-only (ver qué cambiaría en el state para reflejar la realidad) → revisar → apply -refresh-only (aplicar los cambios al state sin modificar infraestructura).",
+      "tags": ["cert", "deprecated", "state", "drift"]
+    },
+    {
+      "id": "exam-q015",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "Un equipo renombra `aws_s3_bucket.old` a `aws_s3_bucket.new` en su configuración HCL. Sin intervención adicional, ¿qué hará Terraform?",
+      "options": [
+        { "id": "a", "text": "Detecta el renombramiento automáticamente y actualiza el state" },
+        { "id": "b", "text": "Destruye el bucket antiguo y crea uno nuevo" },
+        { "id": "c", "text": "Ignora el cambio y mantiene el state sin modificar" },
+        { "id": "d", "text": "Falla con error porque los nombres de recursos no pueden cambiar" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Terraform no detecta renombramientos. Verá -aws_s3_bucket.old y +aws_s3_bucket.new, destruyendo el bucket original y creando uno nuevo. Para evitarlo: usar el bloque moved { from = ... to = ... } (Terraform 1.1+).",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "exam-q016",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Qué diferencia hay entre `terraform state mv` y el bloque `moved {}`?",
+      "options": [
+        { "id": "a", "text": "Solo terraform state mv puede usarse dentro de módulos" },
+        { "id": "b", "text": "moved {} es declarativo, revisable en PR y queda en el código; terraform state mv es imperativo sin trazabilidad en HCL" },
+        { "id": "c", "text": "No hay diferencia funcional" },
+        { "id": "d", "text": "moved {} solo funciona para módulos; state mv para recursos del root" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "moved {} (Terraform 1.1+) se declara en HCL, aparece en el plan, puede revisarse en un PR y queda en el historial de git. terraform state mv modifica el state directamente desde CLI sin dejar rastro en el código.",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "exam-q017",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "What does `terraform state rm aws_instance.legacy` do?",
+      "options": [
+        { "id": "a", "text": "Destroys the EC2 instance in AWS" },
+        { "id": "b", "text": "Removes the resource from Terraform's state but leaves the instance running in AWS" },
+        { "id": "c", "text": "Marks the resource for replacement on next apply" },
+        { "id": "d", "text": "Moves the resource to a different workspace" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "terraform state rm removes the resource from Terraform's tracking (state) without destroying the actual infrastructure in the provider. The EC2 instance continues to run. Terraform simply stops managing it.",
+      "tags": ["cert", "state", "comandos"]
+    },
+    {
+      "id": "exam-q018",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Qué hace `terraform apply -refresh-only`?",
+      "options": [
+        { "id": "a", "text": "Aplica cambios de infraestructura y actualiza el state" },
+        { "id": "b", "text": "Actualiza el state para reflejar el estado real de la infraestructura, sin crear ni destruir recursos" },
+        { "id": "c", "text": "Recarga los providers sin aplicar cambios" },
+        { "id": "d", "text": "Resetea el state al estado inicial" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "apply -refresh-only actualiza el state para que refleje la realidad del proveedor. No crea, modifica ni destruye ningún recurso. Es el reemplazo del deprecado terraform refresh.",
+      "tags": ["cert", "state", "drift"]
+    },
+    {
+      "id": "exam-q019",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Cuándo es preferible `for_each` sobre `count` para crear múltiples recursos?",
+      "options": [
+        { "id": "a", "text": "Cuando se necesitan más de 10 instancias" },
+        { "id": "b", "text": "Cuando los recursos se identifican mejor por un nombre o clave que por un índice, para evitar recreaciones al modificar la colección" },
+        { "id": "c", "text": "for_each siempre es superior; count está deprecado" },
+        { "id": "d", "text": "Cuando se trabaja con módulos del Registry" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "for_each usa claves string estables. Eliminar un elemento del medio de una lista con count renumera los índices posteriores causando recreaciones. Con for_each, solo el elemento eliminado se destruye.",
+      "tags": ["cert", "resources", "for_each"]
+    },
+    {
+      "id": "exam-q020",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Qué tipos acepta `for_each` en un resource?",
+      "options": [
+        { "id": "a", "text": "Solo list(string)" },
+        { "id": "b", "text": "Solo number" },
+        { "id": "c", "text": "map(any) o set(string)" },
+        { "id": "d", "text": "Cualquier tipo de variable" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "for_each acepta map o set(string). No acepta listas directamente. Para usar una lista, convertirla con toset() si los elementos son únicos. Con map: each.key y each.value. Con set: each.key (= each.value).",
+      "tags": ["cert", "resources", "for_each"]
+    },
+    {
+      "id": "exam-q021",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Para qué sirve un `data source` en Terraform?",
+      "options": [
+        { "id": "a", "text": "Para crear recursos que dependen de datos externos" },
+        { "id": "b", "text": "Para leer información de recursos existentes sin modificarlos" },
+        { "id": "c", "text": "Para almacenar datos de configuración en el state" },
+        { "id": "d", "text": "Para definir valores de variables de forma dinámica" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Los data sources leen información de recursos existentes (AMIs, VPCs, zonas DNS) sin crearlos ni modificarlos. Son de solo lectura y se evalúan durante el plan si los valores necesarios son conocidos.",
+      "tags": ["cert", "data-sources"]
+    },
+    {
+      "id": "exam-q022",
+      "type": "multiple-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Cuáles son formas válidas de pasar valores a variables de input? (selecciona todas las correctas)",
+      "options": [
+        { "id": "a", "text": "Archivo terraform.tfvars" },
+        { "id": "b", "text": "Flag -var en la línea de comandos" },
+        { "id": "c", "text": "Variable de entorno TF_VAR_nombre" },
+        { "id": "d", "text": "Archivo *.auto.tfvars" },
+        { "id": "e", "text": "Modificando directamente el bloque resource" }
+      ],
+      "correctAnswers": ["a", "b", "c", "d"],
+      "explanation": "Las variables pueden pasarse por terraform.tfvars, *.auto.tfvars (automáticos), -var en CLI, TF_VAR_nombre como variable de entorno. Modificar un resource no pasa valores a variables.",
+      "tags": ["cert", "variables", "tfvars"]
+    },
+    {
+      "id": "exam-q023",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "Un módulo tiene un output llamado `instance_id`. ¿Cómo se accede a ese output desde el módulo padre si el módulo se llama `compute`?",
+      "options": [
+        { "id": "a", "text": "compute.instance_id" },
+        { "id": "b", "text": "output.compute.instance_id" },
+        { "id": "c", "text": "module.compute.instance_id" },
+        { "id": "d", "text": "var.compute.instance_id" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "Los outputs de módulos hijos se acceden con module.nombre_modulo.nombre_output. La sintaxis correcta es module.compute.instance_id.",
+      "tags": ["cert", "modulos", "outputs"]
+    },
+    {
+      "id": "exam-q024",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Qué hace `count = var.enabled ? 1 : 0` en un resource?",
+      "options": [
+        { "id": "a", "text": "Crea el recurso con mayor o menor prioridad" },
+        { "id": "b", "text": "Crea el recurso si var.enabled es true; no lo crea si es false" },
+        { "id": "c", "text": "Genera un error porque count no acepta expresiones condicionales" },
+        { "id": "d", "text": "Crea entre 0 y 1 réplica aleatoriamente" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "count = 0 hace que el recurso no se cree. count = 1 crea una instancia. El condicional ternario permite condicionarlo a una variable: si enabled es true → 1 recurso; si false → 0 recursos. Patrón clásico para recursos opcionales.",
+      "tags": ["cert", "resources", "count"]
+    },
+    {
+      "id": "exam-q025",
+      "type": "single-choice",
+      "moduleId": "hcl-expressions",
+      "question": "¿Qué produce `merge({\"a\":1,\"b\":2},{\"b\":5,\"c\":3})`?",
+      "options": [
+        { "id": "a", "text": "{\"a\":1,\"b\":2,\"c\":3}" },
+        { "id": "b", "text": "{\"a\":1,\"b\":5,\"c\":3}" },
+        { "id": "c", "text": "Error por clave duplicada 'b'" },
+        { "id": "d", "text": "{\"a\":1,\"b\":7,\"c\":3}" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "merge() combina maps. En claves duplicadas, el valor del map más a la derecha tiene precedencia. 'b' toma el valor 5 del segundo map.",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "exam-q026",
+      "type": "single-choice",
+      "moduleId": "hcl-expressions",
+      "question": "¿Para qué sirve el bloque `dynamic` en Terraform?",
+      "options": [
+        { "id": "a", "text": "Para crear recursos dinámicamente basados en variables de entorno" },
+        { "id": "b", "text": "Para generar bloques de configuración repetibles dentro de un resource basándose en una colección" },
+        { "id": "c", "text": "Para cambiar la configuración del provider dinámicamente durante el apply" },
+        { "id": "d", "text": "Para importar recursos dinámicamente al state" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "dynamic genera bloques repetibles (como ingress, egress, rule) dentro de un resource. Se usa cuando el número de bloques depende de una colección variable. Es diferente de count/for_each que crea múltiples recursos.",
+      "tags": ["cert", "hcl", "dynamic"]
+    },
+    {
+      "id": "exam-q027",
+      "type": "single-choice",
+      "moduleId": "hcl-expressions",
+      "question": "¿Qué hace la función `try(expr, fallback)` en Terraform?",
+      "options": [
+        { "id": "a", "text": "Evalúa expr; si produce un error, retorna fallback en lugar de lanzar el error" },
+        { "id": "b", "text": "Intenta crear el recurso; si falla, usa el fallback como configuración alternativa" },
+        { "id": "c", "text": "Evalúa múltiples expresiones y retorna la primera que no sea null" },
+        { "id": "d", "text": "Valida que expr sea del tipo correcto; si no, retorna fallback" }
+      ],
+      "correctAnswers": ["a"],
+      "explanation": "try(expr, fallback) evalúa expr y si produce cualquier error de evaluación, retorna fallback en lugar de fallar. Útil para acceder a atributos opcionales de objetos sin causar errores.",
+      "tags": ["cert", "hcl", "funciones"]
+    },
+    {
+      "id": "exam-q028",
+      "type": "single-choice",
+      "moduleId": "hcl-expressions",
+      "question": "What does `(known after apply)` indicate in terraform plan output?",
+      "options": [
+        { "id": "a", "text": "The value is sensitive and will not be displayed" },
+        { "id": "b", "text": "The provider will assign this value during apply; it cannot be determined at plan time" },
+        { "id": "c", "text": "The resource will be replaced with a new one" },
+        { "id": "d", "text": "The value requires manual input before apply" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "(known after apply) means the attribute value will be assigned by the provider during resource creation. Examples include auto-generated IDs, dynamic IPs, and ARNs. This is normal behavior for provider-computed attributes.",
+      "tags": ["cert", "hcl", "valores-desconocidos"]
+    },
+    {
+      "id": "exam-q029",
+      "type": "single-choice",
+      "moduleId": "hcl-expressions",
+      "question": "¿Qué diferencia hay entre `list(string)` y `set(string)` como tipos en Terraform?",
+      "options": [
+        { "id": "a", "text": "list permite strings más largos que set" },
+        { "id": "b", "text": "list mantiene orden y permite duplicados; set no garantiza orden y elimina duplicados" },
+        { "id": "c", "text": "set permite acceso por índice; list no" },
+        { "id": "d", "text": "Son equivalentes pero set tiene mejor rendimiento" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "list(string): ordenado, permite duplicados, acceso por índice. set(string): sin orden garantizado, sin duplicados, compatible directamente con for_each. toset() convierte una lista a set.",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "exam-q030",
+      "type": "multiple-choice",
+      "moduleId": "hcl-expressions",
+      "question": "¿Cuáles son tipos primitivos válidos en HCL de Terraform? (selecciona todos los correctos)",
+      "options": [
+        { "id": "a", "text": "string" },
+        { "id": "b", "text": "number" },
+        { "id": "c", "text": "bool" },
+        { "id": "d", "text": "integer" },
+        { "id": "e", "text": "float" }
+      ],
+      "correctAnswers": ["a", "b", "c"],
+      "explanation": "Los tipos primitivos en HCL son string, number y bool. No existen 'integer' ni 'float' como tipos separados — number cubre todos los valores numéricos.",
+      "tags": ["cert", "hcl", "tipos"]
+    },
+    {
+      "id": "exam-q031",
+      "type": "single-choice",
+      "moduleId": "lifecycle-validation",
+      "question": "¿Cuándo es NECESARIO usar `depends_on` explícito en Terraform?",
+      "options": [
+        { "id": "a", "text": "Siempre que un recurso use valores de otro recurso" },
+        { "id": "b", "text": "Cuando existe una dependencia de comportamiento que Terraform no puede detectar mediante referencias de valores" },
+        { "id": "c", "text": "Solo cuando se usan módulos externos del Registry" },
+        { "id": "d", "text": "Siempre que se use for_each o count" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Terraform detecta dependencias implícitas mediante referencias. depends_on solo es necesario para dependencias que no se expresan como referencias de valores (dependencias de comportamiento). Usarlo innecesariamente puede hacer el plan más lento.",
+      "tags": ["cert", "resources", "dependencias"]
+    },
+    {
+      "id": "exam-q032",
+      "type": "single-choice",
+      "moduleId": "lifecycle-validation",
+      "question": "¿Qué hace `lifecycle { create_before_destroy = true }`?",
+      "options": [
+        { "id": "a", "text": "Previene que el recurso sea destruido" },
+        { "id": "b", "text": "Invierte el orden: crea el nuevo recurso primero, luego destruye el antiguo" },
+        { "id": "c", "text": "Hace que el recurso se cree antes que sus dependencias" },
+        { "id": "d", "text": "Fuerza la recreación del recurso en cada apply" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Por defecto: destroy-then-create. Con create_before_destroy = true: create-then-destroy. Útil para recursos con nombres únicos donde no puede haber dos instancias del mismo nombre simultáneamente, reduciendo downtime.",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "exam-q033",
+      "type": "single-choice",
+      "moduleId": "lifecycle-validation",
+      "question": "¿Cuál es la diferencia entre `precondition` y el bloque `check`?",
+      "options": [
+        { "id": "a", "text": "precondition bloquea el apply si falla; check genera una advertencia sin bloquear" },
+        { "id": "b", "text": "check bloquea el apply; precondition solo advierte" },
+        { "id": "c", "text": "Solo se diferencian en su sintaxis" },
+        { "id": "d", "text": "precondition funciona en plan; check solo en apply" }
+      ],
+      "correctAnswers": ["a"],
+      "explanation": "precondition está en el bloque lifecycle y aborta el apply si la condición falla. El bloque check es independiente, se evalúa post-apply y genera advertencias sin bloquear. Son para casos de uso diferentes.",
+      "tags": ["cert", "new-004", "lifecycle", "validacion"]
+    },
+    {
+      "id": "exam-q034",
+      "type": "single-choice",
+      "moduleId": "lifecycle-validation",
+      "question": "Un equipo necesita que un Auto Scaling Group se recree cuando cambia el launch template asociado, aunque el ASG no tenga cambios de configuración directos. ¿Qué lifecycle argument usar?",
+      "options": [
+        { "id": "a", "text": "lifecycle { ignore_changes = [launch_template] }" },
+        { "id": "b", "text": "lifecycle { replace_triggered_by = [aws_launch_template.main.id] }" },
+        { "id": "c", "text": "depends_on = [aws_launch_template.main]" },
+        { "id": "d", "text": "lifecycle { create_before_destroy = true }" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "replace_triggered_by fuerza la recreación del recurso cuando otro recurso o atributo específico cambia. Es exactamente para este caso: el ASG debe recrearse cuando el launch template cambia.",
+      "tags": ["cert", "new-004", "resources", "lifecycle"]
+    },
+    {
+      "id": "exam-q035",
+      "type": "single-choice",
+      "moduleId": "lifecycle-validation",
+      "question": "¿Cuál es el orden correcto de evaluación de validaciones en Terraform?",
+      "options": [
+        { "id": "a", "text": "postcondition → precondition → variable validation" },
+        { "id": "b", "text": "variable validation → precondition → [apply del recurso] → postcondition" },
+        { "id": "c", "text": "precondition → variable validation → [apply] → postcondition" },
+        { "id": "d", "text": "Todas se evalúan simultáneamente" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "El orden es: variable validation (al recibir la variable) → precondition (antes de aplicar el recurso) → [creación/actualización] → postcondition (después de aplicar). Cada una tiene un momento específico en el ciclo de vida.",
+      "tags": ["cert", "new-004", "validacion"]
+    },
+    {
+      "id": "exam-q036",
+      "type": "true-false",
+      "moduleId": "lifecycle-validation",
+      "question": "El bloque `check` (Terraform 1.5+) bloquea el apply si su assertion falla.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["false"],
+      "explanation": "El bloque check genera ADVERTENCIAS sin bloquear el apply. Para comportamiento bloqueante se usan postconditions dentro de lifecycle. check es para monitoreo continuo de salud de infraestructura.",
+      "tags": ["cert", "new-004", "check"]
+    },
+    {
+      "id": "exam-q037",
+      "type": "single-choice",
+      "moduleId": "secrets-ephemeral",
+      "question": "¿Qué hace realmente `sensitive = true` en una variable de Terraform?",
+      "options": [
+        { "id": "a", "text": "Cifra el valor en el state file" },
+        { "id": "b", "text": "Oculta el valor en la salida de CLI pero el valor permanece en texto plano en el state" },
+        { "id": "c", "text": "Impide que el valor sea accesible desde otros módulos" },
+        { "id": "d", "text": "Genera un hash del valor antes de almacenarlo" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "sensitive = true solo oculta el valor en la salida de plan/apply CLI. El valor se almacena en texto plano en el state file. No es cifrado — es solo ocultamiento en la salida estándar.",
+      "tags": ["cert", "variables", "seguridad"]
+    },
+    {
+      "id": "exam-q038",
+      "type": "single-choice",
+      "moduleId": "secrets-ephemeral",
+      "question": "¿Qué son los valores `ephemeral` introducidos en Terraform 1.10?",
+      "options": [
+        { "id": "a", "text": "Valores que expiran después de 24 horas en el state" },
+        { "id": "b", "text": "Valores que solo existen en memoria durante la ejecución y NO se persisten en el state" },
+        { "id": "c", "text": "Valores aleatorios generados en cada terraform apply" },
+        { "id": "d", "text": "Variables de entorno que Terraform elimina después del apply" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Los ephemeral values existen solo en memoria durante la ejecución. No se escriben en el state file ni en planes guardados. Son ideales para secretos que no necesitan persistirse (tokens temporales, contraseñas de un solo uso).",
+      "tags": ["cert", "new-004", "ephemeral"]
+    },
+    {
+      "id": "exam-q039",
+      "type": "single-choice",
+      "moduleId": "secrets-ephemeral",
+      "question": "¿Cuál es la principal diferencia entre `sensitive` y `ephemeral` para gestionar secretos?",
+      "options": [
+        { "id": "a", "text": "No hay diferencia práctica; ambos cifran el valor en el state" },
+        { "id": "b", "text": "sensitive persiste en el state (oculto en CLI); ephemeral NO persiste en el state (solo en memoria)" },
+        { "id": "c", "text": "ephemeral persiste en el state; sensitive no" },
+        { "id": "d", "text": "sensitive es para variables de entorno; ephemeral es para variables de Terraform" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "sensitive = oculto en CLI, persiste en state. ephemeral = oculto en CLI + NO persiste en state. ephemeral es más seguro para secretos que el proveedor no necesita devolver en futuros plans.",
+      "tags": ["cert", "new-004", "ephemeral", "seguridad"]
+    },
+    {
+      "id": "exam-q040",
+      "type": "single-choice",
+      "moduleId": "secrets-ephemeral",
+      "question": "Un equipo quiere pasar la contraseña de administrador de RDS a Terraform de forma que nunca quede almacenada en el state. ¿Cuál es la mejor combinación con Terraform 1.12?",
+      "options": [
+        { "id": "a", "text": "Variable con sensitive = true" },
+        { "id": "b", "text": "Variable ephemeral + argumento write-only en el resource de RDS" },
+        { "id": "c", "text": "Variable con default = null y pasarla por -var en CLI" },
+        { "id": "d", "text": "Hardcodear la contraseña en el bloque resource" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "La combinación ephemeral variable + write-only argument garantiza que el secreto nunca se persiste: la variable ephemeral no va al state, y el argumento write-only hace que el provider reciba la contraseña sin que Terraform la almacene.",
+      "tags": ["cert", "new-004", "ephemeral", "write-only"]
+    },
+    {
+      "id": "exam-q041",
+      "type": "true-false",
+      "moduleId": "secrets-ephemeral",
+      "question": "El comando `terraform output -json` puede revelar el valor real de outputs marcados como `sensitive = true`.",
       "options": [
         { "id": "true", "text": "Verdadero" },
         { "id": "false", "text": "Falso" }
       ],
       "correctAnswers": ["true"],
-      "explanation": "Terraform es declarativa. Describes qué infraestructura quieres, no los pasos para crearla. Esto contrasta con herramientas imperativas como scripts Bash.",
-      "tags": ["iac", "declarativo"]
+      "explanation": "terraform output -json muestra todos los outputs incluyendo los sensitive, con el valor real expuesto. La marca sensitive previene exposición accidental en la salida estándar pero no es control de acceso. Quien ejecuta terraform output puede ver los valores.",
+      "tags": ["cert", "outputs", "seguridad"]
     },
     {
-      "id": "exam-q004",
+      "id": "exam-q042",
       "type": "single-choice",
-      "moduleId": "providers",
-      "question": "¿Dónde se deben declarar los providers requeridos y sus versiones en Terraform?",
+      "moduleId": "secrets-ephemeral",
+      "question": "¿Cuál es la forma más segura de pasar credenciales de AWS a Terraform en un pipeline de CI/CD?",
       "options": [
-        { "id": "a", "text": "En el bloque `provider { version = ... }`" },
-        { "id": "b", "text": "En el bloque `terraform { required_providers { ... } }`" },
-        { "id": "c", "text": "En el archivo .terraform.lock.hcl manualmente" },
-        { "id": "d", "text": "En variables de entorno TF_PROVIDER_VERSION" }
+        { "id": "a", "text": "Incluirlas en terraform.tfvars y commitearlo al repositorio" },
+        { "id": "b", "text": "Pasarlas como variables de entorno TF_VAR_* inyectadas por el sistema de CI/CD" },
+        { "id": "c", "text": "Hardcodearlas como valores default en las variables" },
+        { "id": "d", "text": "Incluirlas en el bloque provider { } del código" }
       ],
       "correctAnswers": ["b"],
-      "explanation": "Los providers requeridos y sus constraints de versión se declaran en el bloque terraform { required_providers { } }. Esto garantiza reproducibilidad.",
-      "tags": ["providers", "versiones"]
+      "explanation": "Las variables de entorno TF_VAR_* son el método seguro para CI/CD: no se escriben en archivos, no aparecen en el repositorio y pueden provenir de sistemas de secretos seguros (GitHub Actions secrets, Vault, etc.).",
+      "tags": ["cert", "variables", "seguridad", "ci-cd"]
     },
     {
-      "id": "exam-q005",
+      "id": "exam-q043",
       "type": "single-choice",
-      "moduleId": "providers",
-      "question": "¿Qué archivo se debe commitear al control de versiones para garantizar versiones consistentes de providers en el equipo?",
+      "moduleId": "operations-troubleshooting",
+      "question": "¿Cuál es la diferencia principal entre `terraform import` (imperativo) y el bloque `import {}` (declarativo)?",
       "options": [
-        { "id": "a", "text": "terraform.tfstate" },
-        { "id": "b", "text": ".terraform/providers/" },
-        { "id": "c", "text": ".terraform.lock.hcl" },
-        { "id": "d", "text": "terraform.tfvars" }
-      ],
-      "correctAnswers": ["c"],
-      "explanation": ".terraform.lock.hcl registra las versiones exactas de los providers. Commitearlo asegura que todo el equipo use las mismas versiones.",
-      "tags": ["providers", "lock"]
-    },
-    {
-      "id": "exam-q006",
-      "type": "single-choice",
-      "moduleId": "providers",
-      "question": "Un provider con constraint de versión `~> 3.0`, ¿qué versiones acepta?",
-      "options": [
-        { "id": "a", "text": "Cualquier versión mayor o igual a 3.0" },
-        { "id": "b", "text": "Exactamente la versión 3.0" },
-        { "id": "c", "text": "Versiones >= 3.0 y < 4.0" },
-        { "id": "d", "text": "Versiones >= 3.0 y < 3.1" }
-      ],
-      "correctAnswers": ["c"],
-      "explanation": "~> 3.0 acepta versiones >= 3.0 y < 4.0. El major version (3) no puede cambiar, pero sí el minor y patch.",
-      "tags": ["providers", "versiones", "semver"]
-    },
-    {
-      "id": "exam-q007",
-      "type": "single-choice",
-      "moduleId": "state",
-      "question": "¿Cuál es el nombre del archivo de state que crea Terraform por defecto?",
-      "options": [
-        { "id": "a", "text": "state.tf" },
-        { "id": "b", "text": "terraform.state" },
-        { "id": "c", "text": ".terraform/state.json" },
-        { "id": "d", "text": "terraform.tfstate" }
-      ],
-      "correctAnswers": ["d"],
-      "explanation": "Terraform crea terraform.tfstate en el directorio de trabajo. No debe commitearse al VCS; usa un backend remoto para equipos.",
-      "tags": ["state"]
-    },
-    {
-      "id": "exam-q008",
-      "type": "multiple-choice",
-      "moduleId": "state",
-      "question": "¿Por qué se recomienda usar state remoto en equipos? (selecciona todas las correctas)",
-      "options": [
-        { "id": "a", "text": "Evita commitear datos sensibles al repositorio" },
-        { "id": "b", "text": "Permite hacer terraform destroy más rápido" },
-        { "id": "c", "text": "Proporciona locking para evitar modificaciones concurrentes" },
-        { "id": "d", "text": "Permite que varios miembros del equipo compartan el mismo state" }
-      ],
-      "correctAnswers": ["a", "c", "d"],
-      "explanation": "El state remoto resuelve tres problemas del state local en equipos: datos sensibles en el repo, sin locking (corrupción por acceso concurrente) y sin compartición entre miembros.",
-      "tags": ["state", "equipo"]
-    },
-    {
-      "id": "exam-q009",
-      "type": "single-choice",
-      "moduleId": "state",
-      "question": "¿Qué servicio de AWS proporciona state locking cuando se usa S3 como backend de Terraform?",
-      "options": [
-        { "id": "a", "text": "SQS" },
-        { "id": "b", "text": "DynamoDB" },
-        { "id": "c", "text": "ElastiCache" },
-        { "id": "d", "text": "RDS" }
+        { "id": "a", "text": "terraform import puede importar múltiples recursos a la vez; import {} solo uno" },
+        { "id": "b", "text": "import {} es declarativo, aparece en el plan para revisión y queda en el historial; terraform import modifica el state directamente sin trazabilidad en HCL" },
+        { "id": "c", "text": "Solo import {} requiere que el bloque resource exista previamente" },
+        { "id": "d", "text": "No hay diferencia funcional" }
       ],
       "correctAnswers": ["b"],
-      "explanation": "El backend S3 de Terraform usa una tabla de DynamoDB para implementar locking. La tabla necesita una clave de partición llamada 'LockID'.",
-      "tags": ["state", "locking", "aws"]
+      "explanation": "import {} (Terraform 1.5+) es declarativo: aparece en el plan, se revisa en PR, queda en git. terraform import imperativo modifica el state directamente sin plan previo ni trazabilidad en el código.",
+      "tags": ["cert", "import"]
     },
     {
-      "id": "exam-q010",
+      "id": "exam-q044",
+      "type": "single-choice",
+      "moduleId": "operations-troubleshooting",
+      "question": "¿Por qué está deprecado `terraform taint`?",
+      "options": [
+        { "id": "a", "text": "Generaba conflictos con el state locking" },
+        { "id": "b", "text": "Fue reemplazado por terraform apply -replace que muestra el efecto en el plan antes de ejecutar" },
+        { "id": "c", "text": "Solo funcionaba con ciertos providers" },
+        { "id": "d", "text": "Causaba problemas con módulos anidados" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "terraform taint modificaba el state directamente sin mostrar el efecto en un plan previo. terraform apply -replace hace lo mismo pero siguiendo el flujo estándar plan/apply, siendo más seguro y transparente.",
+      "tags": ["cert", "deprecated", "comandos"]
+    },
+    {
+      "id": "exam-q045",
+      "type": "single-choice",
+      "moduleId": "operations-troubleshooting",
+      "question": "What do the `TF_LOG_CORE` and `TF_LOG_PROVIDER` environment variables do?",
+      "options": [
+        { "id": "a", "text": "They set different log levels for core Terraform and the provider respectively" },
+        { "id": "b", "text": "They enable logging only for Terraform core or only for the provider, allowing targeted debugging" },
+        { "id": "c", "text": "They define where core and provider logs are written" },
+        { "id": "d", "text": "They are aliases for TF_LOG and have identical behavior" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "TF_LOG_CORE enables logging only for the Terraform core engine. TF_LOG_PROVIDER enables logging only for the provider. This allows filtering logs to the relevant component when debugging specific issues.",
+      "tags": ["cert", "debugging", "logs"]
+    },
+    {
+      "id": "exam-q046",
+      "type": "single-choice",
+      "moduleId": "operations-troubleshooting",
+      "question": "¿Por qué no se recomienda el uso habitual del flag `-target` en Terraform?",
+      "options": [
+        { "id": "a", "text": "Porque es más lento que un apply completo" },
+        { "id": "b", "text": "Porque puede dejar el state inconsistente al no actualizar recursos dependientes" },
+        { "id": "c", "text": "Porque está deprecado en Terraform 1.x" },
+        { "id": "d", "text": "Porque requiere permisos de administrador adicionales" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "-target limita la operación al recurso especificado y sus dependencias, ignorando el resto. Puede dejar el state inconsistente si recursos relacionados quedan sin actualizar. Solo para operaciones de emergencia o debugging.",
+      "tags": ["cert", "comandos", "target"]
+    },
+    {
+      "id": "exam-q047",
+      "type": "single-choice",
+      "moduleId": "operations-troubleshooting",
+      "question": "Un ingeniero quiere forzar la recreación de `aws_instance.api` sin cambios de configuración. ¿Cuál es el comando correcto?",
+      "options": [
+        { "id": "a", "text": "terraform taint aws_instance.api && terraform apply" },
+        { "id": "b", "text": "terraform state rm aws_instance.api && terraform apply" },
+        { "id": "c", "text": "terraform apply -replace=aws_instance.api" },
+        { "id": "d", "text": "terraform apply -force=aws_instance.api" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "terraform apply -replace fuerza la destrucción y recreación del recurso, mostrando primero el efecto en el plan. Reemplaza al deprecado terraform taint. state rm también recrearía el recurso pero perdería el state.",
+      "tags": ["cert", "comandos", "replace"]
+    },
+    {
+      "id": "exam-q048",
+      "type": "single-choice",
+      "moduleId": "operations-troubleshooting",
+      "question": "¿Qué hace `terraform plan -generate-config-out=generated.tf` (Terraform 1.6+)?",
+      "options": [
+        { "id": "a", "text": "Genera un plan binario que puede usarse con terraform apply" },
+        { "id": "b", "text": "Genera la configuración HCL automáticamente para recursos declarados en bloques import {}" },
+        { "id": "c", "text": "Exporta la configuración completa actual a un archivo de respaldo" },
+        { "id": "d", "text": "Genera documentación de la infraestructura en formato Markdown" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "-generate-config-out genera la configuración HCL para recursos en bloques import {}. Automatiza la parte más tediosa de importar: escribir manualmente todos los atributos del recurso existente.",
+      "tags": ["cert", "import"]
+    },
+    {
+      "id": "exam-q049",
+      "type": "single-choice",
+      "moduleId": "hcp-terraform",
+      "question": "¿Cuál es la diferencia fundamental entre CLI workspaces y HCP Terraform workspaces?",
+      "options": [
+        { "id": "a", "text": "Son equivalentes; solo difieren en la interfaz de gestión" },
+        { "id": "b", "text": "CLI workspaces son múltiples states para la misma configuración; HCP workspaces son unidades de infraestructura completas con state, variables y ejecuciones propias" },
+        { "id": "c", "text": "CLI workspaces solo existen en Terraform OSS; HCP workspaces en Enterprise" },
+        { "id": "d", "text": "HCP workspaces no gestionan state; CLI workspaces sí" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "CLI workspaces comparten configuración y backend, solo tienen states separados. HCP Terraform workspaces son unidades autónomas con su propio state, variables, VCS, historial de ejecuciones y permisos. Son conceptos completamente diferentes.",
+      "tags": ["cert", "hcp-terraform", "workspaces"]
+    },
+    {
+      "id": "exam-q050",
+      "type": "single-choice",
+      "moduleId": "hcp-terraform",
+      "question": "¿Cuál es el bloque recomendado para integrar Terraform con HCP Terraform en versiones modernas (1.1+)?",
+      "options": [
+        { "id": "a", "text": "backend \"remote\" {}" },
+        { "id": "b", "text": "cloud {}" },
+        { "id": "c", "text": "terraform_cloud {}" },
+        { "id": "d", "text": "remote_state {}" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "El bloque cloud {} es la integración recomendada desde Terraform 1.1. El backend remote está en desuso activo. cloud {} soporta selección por tags de workspace y nuevas características que remote no recibirá.",
+      "tags": ["cert", "hcp-terraform", "backend"]
+    },
+    {
+      "id": "exam-q051",
+      "type": "single-choice",
+      "moduleId": "hcp-terraform",
+      "question": "¿Qué son los Variable Sets en HCP Terraform?",
+      "options": [
+        { "id": "a", "text": "Sets de variables predefinidas por HashiCorp para providers comunes" },
+        { "id": "b", "text": "Colecciones de variables reutilizables que pueden aplicarse a múltiples workspaces" },
+        { "id": "c", "text": "Grupos de variables de entorno del sistema operativo" },
+        { "id": "d", "text": "Variables que se establecen automáticamente durante el plan" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Los Variable Sets se definen una vez en la organización y se aplican a múltiples workspaces o proyectos. Son ideales para credenciales de provider comunes: si rotan, se actualiza en un lugar y todos los workspaces se benefician.",
+      "tags": ["cert", "hcp-terraform", "variables"]
+    },
+    {
+      "id": "exam-q052",
       "type": "true-false",
-      "moduleId": "state",
-      "question": "Si renombras un recurso en tu configuración .tf, Terraform detecta automáticamente el cambio y no destruye ni recrea el recurso.",
+      "moduleId": "hcp-terraform",
+      "question": "En el VCS-driven workflow de HCP Terraform, abrir un Pull Request en GitHub hace que Terraform aplique automáticamente los cambios al ambiente de staging.",
       "options": [
         { "id": "true", "text": "Verdadero" },
         { "id": "false", "text": "Falso" }
       ],
       "correctAnswers": ["false"],
-      "explanation": "Terraform no detecta renombramientos. Verá un recurso eliminado y uno nuevo. Para evitar destrucción/recreación usa terraform state mv o el bloque moved {} (Terraform 1.1+).",
-      "tags": ["state", "refactoring"]
+      "explanation": "Abrir un PR dispara un SPECULATIVE PLAN (solo lectura, no puede aplicarse). El plan muestra el impacto de los cambios como comentario en el PR. El apply solo ocurre después del merge, y solo si Auto Apply está habilitado.",
+      "tags": ["cert", "hcp-terraform", "workflow"]
     },
     {
-      "id": "exam-q011",
+      "id": "exam-q053",
       "type": "single-choice",
-      "moduleId": "resources-modules",
-      "question": "¿Cómo se referencia una variable de input llamada `instance_type` dentro de una configuración Terraform?",
+      "moduleId": "hcp-terraform",
+      "question": "¿Qué ocurre con el archivo terraform.tfstate local cuando una configuración usa el bloque `cloud {}`?",
       "options": [
-        { "id": "a", "text": "input.instance_type" },
-        { "id": "b", "text": "variable.instance_type" },
-        { "id": "c", "text": "var.instance_type" },
-        { "id": "d", "text": "${instance_type}" }
-      ],
-      "correctAnswers": ["c"],
-      "explanation": "Las variables de input se referencian con el prefijo var. La sintaxis correcta es var.instance_type.",
-      "tags": ["variables"]
-    },
-    {
-      "id": "exam-q012",
-      "type": "single-choice",
-      "moduleId": "resources-modules",
-      "question": "¿Para qué se usa un `data source` en Terraform?",
-      "options": [
-        { "id": "a", "text": "Para crear nuevos recursos en el proveedor" },
-        { "id": "b", "text": "Para almacenar el state de forma remota" },
-        { "id": "c", "text": "Para leer información de recursos existentes sin modificarlos" },
-        { "id": "d", "text": "Para definir outputs de un módulo" }
-      ],
-      "correctAnswers": ["c"],
-      "explanation": "Los data sources permiten consultar información de recursos existentes (AMIs, VPCs, zonas DNS...) sin crearlos ni modificarlos. Son de solo lectura.",
-      "tags": ["data-sources"]
-    },
-    {
-      "id": "exam-q013",
-      "type": "single-choice",
-      "moduleId": "resources-modules",
-      "question": "¿Por qué `for_each` es generalmente preferible a `count` para crear múltiples recursos?",
-      "options": [
-        { "id": "a", "text": "for_each tiene mejor rendimiento que count" },
-        { "id": "b", "text": "for_each usa claves string estables, evitando recreaciones al eliminar elementos intermedios" },
-        { "id": "c", "text": "count no está disponible en Terraform >= 1.0" },
-        { "id": "d", "text": "for_each consume menos memoria" }
+        { "id": "a", "text": "Se crea localmente como siempre" },
+        { "id": "b", "text": "No se crea; el state se gestiona completamente en HCP Terraform" },
+        { "id": "c", "text": "Se crea un archivo .tfstate vacío como marcador" },
+        { "id": "d", "text": "Se sincroniza bidireccionalmente entre local y HCP" }
       ],
       "correctAnswers": ["b"],
-      "explanation": "Con count, eliminar el elemento 0 de una lista de 3 renumera los demás causando recreaciones. Con for_each, cada elemento tiene una clave estable y solo el elemento eliminado se destruye.",
-      "tags": ["resources", "for_each"]
+      "explanation": "Con el bloque cloud {}, el state se gestiona completamente en HCP Terraform. No se crea terraform.tfstate en el disco local. Todo el state está en HCP con historial, locking automático y control de acceso.",
+      "tags": ["cert", "hcp-terraform", "state"]
     },
     {
-      "id": "exam-q014",
-      "type": "multiple-choice",
-      "moduleId": "resources-modules",
-      "question": "¿Cuáles son formas válidas de pasar valores a variables de input en Terraform? (selecciona todas las correctas)",
+      "id": "exam-q054",
+      "type": "single-choice",
+      "moduleId": "hcp-terraform",
+      "question": "¿Cuál es la ventaja principal del bloque `cloud {}` sobre el backend `remote` para la selección de workspaces?",
       "options": [
-        { "id": "a", "text": "Archivo terraform.tfvars" },
-        { "id": "b", "text": "Flag -var en la línea de comandos" },
-        { "id": "c", "text": "Variable de entorno TF_VAR_nombre" },
-        { "id": "d", "text": "Modificando el bloque resource directamente" },
-        { "id": "e", "text": "Archivo *.auto.tfvars" }
+        { "id": "a", "text": "cloud {} puede conectarse a múltiples organizaciones simultáneamente" },
+        { "id": "b", "text": "cloud {} soporta selección de workspaces por tags, además de por nombre" },
+        { "id": "c", "text": "cloud {} es más rápido que el backend remote" },
+        { "id": "d", "text": "No hay ventajas prácticas; son equivalentes" }
       ],
-      "correctAnswers": ["a", "b", "c", "e"],
-      "explanation": "Se pueden pasar valores por: terraform.tfvars (automático), *.auto.tfvars (automático), -var en CLI y TF_VAR_nombre como variable de entorno. Los bloques resource no son el lugar para valores de variables.",
-      "tags": ["variables", "tfvars"]
+      "correctAnswers": ["b"],
+      "explanation": "El bloque cloud {} soporta `workspaces { tags = [\"production\"] }` para seleccionar todos los workspaces con esas etiquetas. El backend remote solo soporta name o prefix. Es una ventaja significativa para organizaciones con muchos workspaces.",
+      "tags": ["cert", "hcp-terraform", "workspaces"]
     },
     {
-      "id": "exam-q015",
-      "type": "true-false",
+      "id": "exam-q055",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Qué hace el bloque `removed {}` con `lifecycle { destroy = false }` en Terraform 1.7+?",
+      "options": [
+        { "id": "a", "text": "Destruye el recurso en el proveedor pero lo mantiene en el state" },
+        { "id": "b", "text": "Elimina el recurso del state de Terraform pero lo preserva en el proveedor" },
+        { "id": "c", "text": "Marca el recurso como deprecado en el state" },
+        { "id": "d", "text": "No hace nada; destroy = false cancela el bloque removed" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "removed { lifecycle { destroy = false } } elimina el recurso del state de Terraform (deja de gestionarlo) pero el recurso SIGUE existiendo en el proveedor. Es lo opuesto de destroy = true que destruiría el recurso real.",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "exam-q056",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "An engineer adds `version = \"~> 5.0\"` directly inside the `provider \"aws\"` block. What is the implication in Terraform 1.x?",
+      "options": [
+        { "id": "a", "text": "This is the correct and recommended way to specify provider versions" },
+        { "id": "b", "text": "This is deprecated; version constraints should be in the required_providers block" },
+        { "id": "c", "text": "This will cause a validation error and terraform init will fail" },
+        { "id": "d", "text": "This syntax only works with Terraform 0.12 and earlier" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Declaring version inside the provider {} block is deprecated in Terraform 1.x. It still works but generates a deprecation warning. The correct place is required_providers inside terraform {}. New configurations should never use the deprecated form.",
+      "tags": ["cert", "deprecated", "providers", "versiones"]
+    },
+    {
+      "id": "exam-q057",
+      "type": "single-choice",
+      "moduleId": "lifecycle-validation",
+      "question": "¿Cuántos bloques `validation` puede tener una variable en Terraform?",
+      "options": [
+        { "id": "a", "text": "Solo uno por variable" },
+        { "id": "b", "text": "Máximo dos" },
+        { "id": "c", "text": "Múltiples; cada uno con su propia condición y mensaje de error" },
+        { "id": "d", "text": "Cero; la validación debe hacerse con preconditions en los recursos" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "Una variable puede tener múltiples bloques validation, cada uno con su condition y error_message. Permite validaciones granulares: uno verifica el formato, otro el rango, otro los valores permitidos.",
+      "tags": ["cert", "variables", "validacion"]
+    },
+    {
+      "id": "exam-q058",
+      "type": "multiple-choice",
+      "moduleId": "hcp-terraform",
+      "question": "¿Cuáles son los tres workflows principales en HCP Terraform? (selecciona todos los correctos)",
+      "options": [
+        { "id": "a", "text": "VCS-driven workflow" },
+        { "id": "b", "text": "CLI-driven workflow" },
+        { "id": "c", "text": "GUI-driven workflow" },
+        { "id": "d", "text": "API-driven workflow" }
+      ],
+      "correctAnswers": ["a", "b", "d"],
+      "explanation": "Los tres workflows son VCS-driven (trigger por commits/PRs en VCS), CLI-driven (terraform plan/apply local con ejecución remota) y API-driven (control programático via API REST). No existe GUI-driven workflow como concepto.",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "exam-q059",
+      "type": "single-choice",
+      "moduleId": "hcl-expressions",
+      "question": "¿Qué función de Terraform convierte un objeto HCL a su representación JSON como string?",
+      "options": [
+        { "id": "a", "text": "tostring()" },
+        { "id": "b", "text": "jsonencode()" },
+        { "id": "c", "text": "tojson()" },
+        { "id": "d", "text": "format(\"%j\", value)" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "jsonencode() convierte objetos, maps y listas de Terraform a su representación JSON como string. Es la función estándar para generar JSON de políticas IAM, configuraciones de ECS o cualquier recurso que espere JSON como string.",
+      "tags": ["cert", "hcl", "funciones", "json"]
+    },
+    {
+      "id": "exam-q060",
+      "type": "single-choice",
       "moduleId": "core-concepts",
-      "question": "Ejecutar `terraform apply` dos veces sin cambios en la configuración destruye y recrea los recursos.",
+      "question": "¿Cuál de las siguientes afirmaciones describe mejor el principio de IaC declarativa que implementa Terraform?",
       "options": [
-        { "id": "true", "text": "Verdadero" },
-        { "id": "false", "text": "Falso" }
+        { "id": "a", "text": "El usuario escribe scripts que crean recursos paso a paso en el orden correcto" },
+        { "id": "b", "text": "El usuario define el estado final deseado y Terraform determina las operaciones necesarias para alcanzarlo" },
+        { "id": "c", "text": "Terraform genera automáticamente la configuración basándose en la infraestructura existente" },
+        { "id": "d", "text": "El usuario proporciona plantillas que Terraform llena con valores de variables" }
       ],
-      "correctAnswers": ["false"],
-      "explanation": "Terraform es idempotente. Si la infraestructura ya está en el estado deseado, la segunda ejecución de apply no hace ningún cambio.",
-      "tags": ["fundamentos", "idempotente"]
+      "correctAnswers": ["b"],
+      "explanation": "IaC declarativa significa describir el 'qué' (estado deseado) no el 'cómo' (pasos). Terraform lee la configuración, la compara con el state actual y determina qué operaciones son necesarias. El usuario no define el orden ni los pasos.",
+      "tags": ["cert", "iac", "fundamentos"]
     }
   ]
 }

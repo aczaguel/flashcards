@@ -1,0 +1,506 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "lifecycle-validation",
+    "order": 6,
+    "name": "Lifecycle y Validación",
+    "description": "depends_on, lifecycle block, preconditions, postconditions, validación de variables y bloque check",
+    "estimatedMinutes": 55
+  },
+  "flashcards": [
+    {
+      "id": "lifecycle-validation-001",
+      "question": "¿Cuándo es necesario usar `depends_on` explícito en Terraform?",
+      "answer": "Solo cuando existe una dependencia entre recursos que Terraform no puede detectar automáticamente a través de referencias de valores. Se usa para dependencias de comportamiento, no de datos.",
+      "explanation": "Terraform detecta dependencias implícitas cuando un recurso usa atributos de otro (`aws_instance.web.id`). `depends_on` es para cuando un recurso depende de que otro exista/complete aunque no use sus valores. Ejemplo: una función Lambda que necesita que una política de bucket S3 exista, pero no referencia ningún atributo de esa política.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "dependencias", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-002",
+      "question": "¿Qué hace `create_before_destroy = true` en el bloque `lifecycle`?",
+      "answer": "Invierte el orden por defecto: primero crea el nuevo recurso, luego destruye el antiguo. Útil cuando el recurso tiene restricciones de nombre único o cuando se quiere minimizar downtime.",
+      "explanation": "Orden por defecto: destroy → create (puede causar downtime). Con create_before_destroy: create → destroy (reduce downtime). Ejemplo: ALB donde el nombre debe ser único. Sin esto, primero se destruye el ALB viejo, luego se crea el nuevo, causando interrupción del servicio.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-003",
+      "question": "¿Qué hace `prevent_destroy = true` en el bloque `lifecycle`?",
+      "answer": "Hace que Terraform falle con error si un plan intenta destruir el recurso. Protege recursos críticos de eliminación accidental.",
+      "explanation": "Con prevent_destroy, `terraform destroy` o cualquier plan que destruya el recurso genera un error. Para poder destruirlo, debes primero eliminar el bloque lifecycle o cambiar prevent_destroy a false y hacer apply.",
+      "difficulty": "basic",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-004",
+      "question": "¿Qué hace `ignore_changes` en el bloque `lifecycle`?",
+      "answer": "Indica a Terraform que ignore cambios en los atributos especificados. Si esos atributos cambian (externamente o en la configuración), Terraform no planificará actualizaciones para ellos.",
+      "explanation": "Ejemplo: `lifecycle { ignore_changes = [tags] }` evita que Terraform revierta cambios de etiquetas hechos por otros sistemas. Con `ignore_changes = all`, ignora todos los cambios. Útil para atributos gestionados por otro proceso.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-005",
+      "question": "¿Qué hace `replace_triggered_by` en el bloque `lifecycle`?",
+      "answer": "Lista de recursos o atributos que, cuando cambian, fuerzan la destrucción y recreación del recurso actual, incluso si sus propios atributos no cambiaron.",
+      "explanation": "Ejemplo: `lifecycle { replace_triggered_by = [aws_launch_template.main.id] }`. Si el launch template cambia, las instancias se recrean aunque sus propios argumentos no hayan cambiado. Útil para garantizar que los recursos tomen las últimas configuraciones.",
+      "difficulty": "advanced",
+      "tags": ["cert", "new-004", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-006",
+      "question": "¿Cuál es el orden por defecto de operaciones de Terraform cuando un recurso necesita ser reemplazado?",
+      "answer": "Por defecto: destroy-then-create. El recurso antiguo se destruye primero, luego se crea el nuevo. Esto puede causar downtime.",
+      "explanation": "El atributo ForceNew del provider determina si un cambio requiere recreación. El orden destroy-then-create es el default. `create_before_destroy = true` invierte este orden.",
+      "difficulty": "basic",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-007",
+      "question": "¿Qué son las `preconditions` en un resource o data source?",
+      "answer": "Validaciones que se evalúan ANTES de que el recurso se cree/actualice. Si la condición falla, Terraform lanza un error con el mensaje especificado antes de ejecutar cualquier cambio.",
+      "explanation": "Sintaxis: dentro de `lifecycle { precondition { condition = expr error_message = \"msg\" } }`. Ejemplo: verificar que la AMI especificada es compatible con el tipo de instancia antes de intentar crear la instancia.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "lifecycle", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-008",
+      "question": "¿Qué son las `postconditions` en un resource?",
+      "answer": "Validaciones que se evalúan DESPUÉS de que el recurso se crea o actualiza. Verifican el estado real del recurso contra condiciones esperadas. Si fallan, Terraform reporta el error.",
+      "explanation": "Ejemplo: después de crear una instancia, verificar que su estado sea 'running': `postcondition { condition = self.instance_state == \"running\" error_message = \"La instancia no quedó en estado running\" }`. El objeto `self` referencia el recurso creado.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "lifecycle", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-009",
+      "question": "¿Cómo se valida el valor de una variable con el bloque `validation`?",
+      "answer": "Con un bloque `validation` dentro de la declaración `variable`, especificando `condition` (expresión booleana) y `error_message`. La validación ocurre antes del plan.",
+      "explanation": "Ejemplo: `variable \"env\" { type = string validation { condition = contains([\"dev\",\"staging\",\"prod\"], var.env) error_message = \"env debe ser dev, staging o prod\" } }`. Se pueden tener múltiples bloques validation por variable.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "variables", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-010",
+      "question": "¿Qué es el bloque `check` en Terraform (1.5+)?",
+      "answer": "Bloque que define assertions de salud de infraestructura que se evalúan después de cada apply pero NO bloquean la ejecución si fallan. Reportan advertencias, no errores.",
+      "explanation": "Diferencia clave con preconditions/postconditions: check no aborta el apply si falla. Es para monitoreo de estado, no para validación de pre/post-condiciones. Ejemplo: verificar que una URL responde con 200 después del deploy.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "validacion", "check"]
+    },
+    {
+      "id": "lifecycle-validation-011",
+      "question": "¿Cuándo Terraform decide destruir y recrear un recurso (ForceNew)?",
+      "answer": "Cuando se modifica un atributo del recurso que el provider ha marcado como 'ForceNew' — significa que ese atributo no puede cambiarse en sitio y requiere reemplazar el recurso completo.",
+      "explanation": "ForceNew es una característica del schema del provider, no de la configuración HCL. Ejemplos: cambiar la AMI de una instancia EC2, el tipo de volumen EBS o el nombre de un bucket S3. Terraform lo muestra como -/+ en el plan.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-012",
+      "question": "¿Cuál es la diferencia entre `precondition`, `postcondition` y `validation` en Terraform?",
+      "answer": "`validation` valida la variable antes del plan. `precondition` verifica condiciones antes de crear/actualizar el recurso (durante apply). `postcondition` verifica el estado real después de crear/actualizar. Todos abortan si fallan.",
+      "explanation": "Orden de evaluación: validation (al recibir valor) → precondition (antes del apply del recurso) → [creación del recurso] → postcondition (después del apply). Cada uno tiene un scope diferente en el ciclo de vida.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-013",
+      "question": "¿Qué diferencia hay entre el bloque `check` y `postcondition`?",
+      "answer": "`postcondition` está dentro del bloque `lifecycle` del recurso y BLOQUEA el apply si falla. `check` es un bloque independiente que ADVIERTE pero no bloquea si falla.",
+      "explanation": "Usar postcondition para garantías que DEBEN cumplirse (el recurso debe quedar en estado correcto). Usar check para monitoreo continuo de salud que es deseable pero no bloqueante (el endpoint externo debe responder).",
+      "difficulty": "advanced",
+      "tags": ["cert", "new-004", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-014",
+      "question": "¿Qué objeto se usa para referenciar el recurso actual dentro de `postcondition`?",
+      "answer": "`self` — referencia al propio recurso donde está declarada la postcondition.",
+      "explanation": "Ejemplo: `postcondition { condition = self.status == \"active\" }`. `self` permite acceder a todos los atributos del recurso una vez creado, incluidos los que eran 'known after apply' durante el plan.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "lifecycle", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-015",
+      "question": "¿Qué sucede si se produce un error de ciclo de dependencias (cycle error) en Terraform?",
+      "answer": "Terraform detecta el ciclo durante el plan y falla con un error listando los recursos que forman el ciclo. No hay manera de ejecutar el apply con un ciclo de dependencias.",
+      "explanation": "Un ciclo ocurre cuando el recurso A depende de B, B depende de C y C depende de A. Terraform no puede determinar el orden de creación. La solución es refactorizar la configuración para eliminar la dependencia circular.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "dependencias"]
+    },
+    {
+      "id": "lifecycle-validation-016",
+      "question": "¿Para qué sirve el atributo `error_message` en un bloque `validation` o `precondition`?",
+      "answer": "Es el mensaje que Terraform muestra al usuario cuando la condición falla. Debe ser un string descriptivo que explique qué valor se esperaba.",
+      "explanation": "Buena práctica: incluir el valor inválido en el mensaje. Ejemplo: `error_message = \"El entorno '${var.env}' no es válido. Debe ser dev, staging o prod.\"`. Los mensajes claros ayudan al usuario a corregir el error sin necesidad de leer el código.",
+      "difficulty": "basic",
+      "tags": ["cert", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-017",
+      "question": "¿Por qué `depends_on` en un módulo puede tener consecuencias no deseadas?",
+      "answer": "Un `depends_on` en un bloque `module` fuerza a que TODO el contenido del módulo dependa explícitamente del recurso referenciado, lo que puede hacer el plan mucho más lento y generar recreaciones innecesarias.",
+      "explanation": "Cuando se usa depends_on en un módulo, Terraform no puede optimizar qué partes del módulo ya estaban completas — trata todo el módulo como dependiente. Usar depends_on en módulos es válido pero se debe hacer con cuidado.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "modulos", "dependencias"]
+    },
+    {
+      "id": "lifecycle-validation-018",
+      "question": "¿Cómo se referencia un atributo en una `precondition` de un data source?",
+      "answer": "Con `self.atributo` para referenciar atributos del propio data source, similar a postconditions en recursos.",
+      "explanation": "Ejemplo en un data source: `data \"aws_ami\" \"ubuntu\" { lifecycle { postcondition { condition = self.architecture == \"x86_64\" error_message = \"La AMI debe ser x86_64\" } } }`. Verifica el resultado del data source antes de que otro recurso lo use.",
+      "difficulty": "advanced",
+      "tags": ["cert", "new-004", "data-sources", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-019",
+      "question": "¿Qué hace `ignore_changes = all` en el bloque `lifecycle`?",
+      "answer": "Instruye a Terraform para que ignore TODOS los cambios en los atributos del recurso. Una vez creado, Terraform nunca planificará actualizaciones aunque la configuración cambie.",
+      "explanation": "Útil para recursos que se auto-configuran o se modifican externamente y no deben ser gestionados por Terraform después de su creación inicial. Usar con precaución: Terraform pierde visibilidad del estado del recurso.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-020",
+      "question": "¿Qué bloque de Terraform (1.5+) permite hacer assertions de estado de infraestructura de forma continua, no solo al crear recursos?",
+      "answer": "El bloque `check`. Se evalúa después de cada apply y puede incluir una aserción con `assert { condition = ... error_message = ... }`. Falla como advertencia, no como error bloqueante.",
+      "explanation": "El bloque check es independiente de cualquier recurso: puede verificar el estado de recursos existentes, URLs, respuestas de APIs, etc. Es la base para monitoreo de conformidad de infraestructura integrado en Terraform.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "check", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-021",
+      "question": "¿Cuántos bloques `validation` puede tener una variable?",
+      "answer": "Múltiples. Se pueden definir tantos bloques `validation` como sean necesarios dentro de una variable, cada uno con su propia condición y mensaje de error.",
+      "explanation": "Ejemplo: una variable `port` puede tener un validation para verificar que es > 0, otro para verificar que es <= 65535, y otro para verificar que no es un puerto reservado. Todos se evalúan al recibir el valor.",
+      "difficulty": "basic",
+      "tags": ["cert", "variables", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-022",
+      "question": "¿Puede `depends_on` crear dependencias circulares?",
+      "answer": "Sí. Si el recurso A tiene `depends_on = [B]` y B tiene `depends_on = [A]`, se crea un ciclo que Terraform detectará y reportará como error.",
+      "explanation": "Terraform valida el grafo de dependencias en la fase de plan. Los ciclos son detectados independientemente de si la dependencia es implícita (por referencia) o explícita (por depends_on). La solución es refactorizar para eliminar la dependencia circular.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "resources", "dependencias"]
+    },
+    {
+      "id": "lifecycle-validation-023",
+      "question": "¿Qué impacto tiene `create_before_destroy = true` en recursos que dependen del recurso afectado?",
+      "answer": "Los recursos que dependen de uno con `create_before_destroy` también deben tener `create_before_destroy = true` implícitamente, o puede haber conflictos. Terraform lo maneja en muchos casos, pero puede requerir configuración manual.",
+      "explanation": "Ejemplo: una instancia con create_before_destroy y un elastic IP que depende de ella. Si el EIP no tiene create_before_destroy, puede intentar destruirse antes de que la nueva instancia exista. Terraform intenta resolver esto automáticamente.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-024",
+      "question": "¿Qué atributos puede verificar una `postcondition`?",
+      "answer": "Cualquier atributo del recurso referenciado con `self`, incluidos los atributos que eran 'known after apply' durante el plan y ahora tienen valores reales.",
+      "explanation": "Una postcondition puede verificar: status del recurso, IPs asignadas, ARNs generados, cualquier atributo computado por el provider. Es especialmente útil para atributos que no se pueden verificar hasta después de la creación.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "new-004", "lifecycle", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-025",
+      "question": "¿Cuál es un ejemplo práctico de uso del bloque `check` en Terraform?",
+      "answer": "Verificar que un endpoint HTTP responde con código 200 después de desplegar. `check \"health\" { data \"http\" \"endpoint\" { url = \"https://api.example.com/health\" } assert { condition = data.http.endpoint.status_code == 200 error_message = \"El endpoint no responde\" } }`",
+      "explanation": "El bloque check puede incluir data sources y assertions. A diferencia de postconditions, si la assertion falla, Terraform reporta una advertencia pero no revierte el apply. Ideal para health checks de infraestructura.",
+      "difficulty": "advanced",
+      "tags": ["cert", "new-004", "check"]
+    },
+    {
+      "id": "lifecycle-validation-026",
+      "question": "¿Puede `ignore_changes` especificar atributos anidados?",
+      "answer": "Sí. Se puede especificar atributos anidados con notación de puntos o de corchetes. Ejemplo: `ignore_changes = [tags[\"ManagedBy\"]]` ignora solo esa etiqueta específica.",
+      "explanation": "Esta granularidad es útil cuando un sistema externo gestiona solo algunas etiquetas y Terraform gestiona otras. Sin esta granularidad, tendrías que ignorar todas las tags o ninguna.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-027",
+      "question": "¿Qué ocurre si una `precondition` referencia un valor 'known after apply'?",
+      "answer": "La precondition no puede evaluarse en el plan (porque el valor es desconocido) y se evalúa durante el apply, antes de realizar la operación sobre el recurso.",
+      "explanation": "Esto es diferente a validation de variables (que siempre se evalúa antes del plan). Las preconditions pueden depender de valores del proveedor que solo se conocen en apply time.",
+      "difficulty": "advanced",
+      "tags": ["cert", "new-004", "lifecycle", "validacion"]
+    },
+    {
+      "id": "lifecycle-validation-028",
+      "question": "¿Cuál es la diferencia de comportamiento entre `lifecycle { prevent_destroy = true }` y simplemente no escribir el bloque `lifecycle`?",
+      "answer": "Sin lifecycle: Terraform puede destruir el recurso normalmente. Con `prevent_destroy = true`: Terraform falla con error si el plan incluye la destrucción del recurso.",
+      "explanation": "prevent_destroy es una medida de seguridad adicional. No impide que el recurso se modifique (solo la destrucción). Es especialmente útil en recursos de datos críticos como bases de datos de producción.",
+      "difficulty": "basic",
+      "tags": ["cert", "resources", "lifecycle"]
+    },
+    {
+      "id": "lifecycle-validation-029",
+      "question": "¿En qué se diferencia un bloque `check` de un bloque de testing en Terraform?",
+      "answer": "El bloque `check` es parte de la configuración de infraestructura y se ejecuta en cada apply. Los tests de Terraform (`terraform test`, desde 1.6) son archivos `.tftest.hcl` separados que se ejecutan explícitamente.",
+      "explanation": "check: integrado en la configuración, verifica estado de infraestructura en cada deploy. terraform test: permite escribir tests de unidad/integración para módulos y configuraciones, con fixtures y assertions más elaboradas.",
+      "difficulty": "advanced",
+      "tags": ["cert", "new-004", "check", "testing"]
+    },
+    {
+      "id": "lifecycle-validation-030",
+      "question": "¿Qué pasa con los recursos dependientes cuando `create_before_destroy` hace que un recurso tenga dos instancias temporalmente?",
+      "answer": "Los recursos dependientes que referencian atributos del recurso con create_before_destroy usarán los atributos del NUEVO recurso (no del antiguo) una vez que el nuevo esté listo.",
+      "explanation": "Durante el período de transición (cuando existen ambas versiones), los recursos dependientes pueden experimentar una actualización para apuntar al nuevo recurso. Terraform gestiona este orden automáticamente.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "resources", "lifecycle"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 85,
+    "questions": [
+      {
+        "id": "lifecycle-validation-q001",
+        "type": "single-choice",
+        "question": "¿Qué hace `lifecycle { prevent_destroy = true }` en un resource?",
+        "options": [
+          { "id": "a", "text": "Previene cualquier modificación al recurso" },
+          { "id": "b", "text": "Hace que terraform plan falle con error si el plan incluye destruir ese recurso" },
+          { "id": "c", "text": "Mueve el recurso a un workspace protegido" },
+          { "id": "d", "text": "Hace una copia de seguridad del recurso antes de cualquier cambio" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "prevent_destroy = true hace que Terraform falle con error si algún plan intenta destruir el recurso. Es una protección contra eliminación accidental. Solo previene la destrucción, no las modificaciones.",
+        "tags": ["cert", "resources", "lifecycle"]
+      },
+      {
+        "id": "lifecycle-validation-q002",
+        "type": "single-choice",
+        "question": "¿Cuándo es necesario `create_before_destroy = true`?",
+        "options": [
+          { "id": "a", "text": "En todos los recursos para garantizar zero downtime" },
+          { "id": "b", "text": "Cuando el recurso tiene restricciones que no permiten dos instancias simultáneas del mismo nombre o tipo" },
+          { "id": "c", "text": "Solo en recursos de base de datos" },
+          { "id": "d", "text": "Cuando el recurso necesita más de 10 minutos para crearse" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "create_before_destroy es útil cuando necesitas crear el nuevo recurso antes de destruir el viejo para minimizar downtime, especialmente en casos donde el nombre o configuración es única y no puede coexistir.",
+        "tags": ["cert", "resources", "lifecycle"]
+      },
+      {
+        "id": "lifecycle-validation-q003",
+        "type": "single-choice",
+        "question": "¿En qué momento se evalúa una `precondition` de un resource?",
+        "options": [
+          { "id": "a", "text": "Al declarar la variable antes del plan" },
+          { "id": "b", "text": "Durante el plan, antes de calcular qué cambios se harán" },
+          { "id": "c", "text": "Durante el apply, antes de ejecutar la operación sobre el recurso" },
+          { "id": "d", "text": "Después de que el recurso se crea exitosamente" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Las preconditions se evalúan durante el apply, antes de ejecutar la creación/actualización del recurso. Si hay valores known after apply, no pueden evaluarse en el plan y se evalúan en apply time.",
+        "tags": ["cert", "new-004", "lifecycle", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q004",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia principal entre `precondition` y el bloque `check`?",
+        "options": [
+          { "id": "a", "text": "precondition va en el bloque lifecycle y BLOQUEA si falla; check es independiente y ADVIERTE sin bloquear" },
+          { "id": "b", "text": "No hay diferencia funcional, son alias" },
+          { "id": "c", "text": "check bloquea el apply; precondition solo advierte" },
+          { "id": "d", "text": "precondition solo funciona con data sources; check solo con resources" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "precondition está en lifecycle y aborta el apply si falla. El bloque check es un bloque independiente que se evalúa post-apply y genera advertencias sin abortar. Son para casos de uso diferentes: precondition para garantías; check para monitoreo.",
+        "tags": ["cert", "new-004", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q005",
+        "type": "true-false",
+        "question": "El bloque `validation` en una variable se evalúa antes de que Terraform ejecute el plan.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Los bloques validation se evalúan al recibir el valor de la variable, que ocurre antes del plan. Si la validación falla, Terraform reporta el error antes de calcular ningún cambio.",
+        "tags": ["cert", "variables", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q006",
+        "type": "single-choice",
+        "question": "Un equipo quiere asegurarse de que la variable `environment` solo acepte los valores `dev`, `staging` o `prod`. ¿Cuál es la forma correcta?",
+        "options": [
+          { "id": "a", "text": "Agregar comentarios en el código indicando los valores válidos" },
+          { "id": "b", "text": "Usar un bloque `validation` con `contains()` y un `error_message`" },
+          { "id": "c", "text": "Usar `type = enum(dev, staging, prod)` en la variable" },
+          { "id": "d", "text": "Usar una precondition en todos los recursos que usen la variable" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El bloque validation con contains() es la solución correcta: `validation { condition = contains([\"dev\",\"staging\",\"prod\"], var.environment) error_message = \"environment must be dev, staging or prod\" }`. No existe tipo enum en Terraform.",
+        "tags": ["cert", "variables", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q007",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son argumentos válidos del bloque `lifecycle`? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "create_before_destroy" },
+          { "id": "b", "text": "prevent_destroy" },
+          { "id": "c", "text": "ignore_changes" },
+          { "id": "d", "text": "replace_triggered_by" },
+          { "id": "e", "text": "force_create" }
+        ],
+        "correctAnswers": ["a", "b", "c", "d"],
+        "explanation": "Los argumentos válidos de lifecycle son: create_before_destroy, prevent_destroy, ignore_changes y replace_triggered_by (TA-004). También precondition y postcondition. 'force_create' no existe en Terraform.",
+        "tags": ["cert", "resources", "lifecycle"]
+      },
+      {
+        "id": "lifecycle-validation-q008",
+        "type": "single-choice",
+        "question": "¿Qué objeto se usa para referenciar el propio recurso dentro de `postcondition`?",
+        "options": [
+          { "id": "a", "text": "this" },
+          { "id": "b", "text": "resource" },
+          { "id": "c", "text": "self" },
+          { "id": "d", "text": "current" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Dentro de postcondition (y precondition), se usa `self` para referenciar el propio recurso. Ejemplo: `condition = self.status == \"active\"`. self permite acceder a todos los atributos del recurso.",
+        "tags": ["cert", "new-004", "lifecycle"]
+      },
+      {
+        "id": "lifecycle-validation-q009",
+        "type": "true-false",
+        "question": "El bloque `check` (Terraform 1.5+) bloquea el apply si su assertion falla.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "El bloque check genera ADVERTENCIAS, no errores. El apply continúa aunque una assertion del check falle. Para comportamiento bloqueante, usar postconditions dentro del lifecycle del recurso.",
+        "tags": ["cert", "new-004", "check"]
+      },
+      {
+        "id": "lifecycle-validation-q010",
+        "type": "single-choice",
+        "question": "A resource requires an IAM role to exist before it can be created, but the resource block does not reference any attribute of the IAM role. How should this dependency be expressed?",
+        "options": [
+          { "id": "a", "text": "Using lifecycle { depends_on = [aws_iam_role.main] }" },
+          { "id": "b", "text": "Using depends_on = [aws_iam_role.main] at the resource level" },
+          { "id": "c", "text": "No action needed; Terraform detects all dependencies automatically" },
+          { "id": "d", "text": "Adding a comment in the code to document the dependency" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "depends_on is a meta-argument at the resource level (not inside lifecycle). When a resource has a behavioral dependency not expressed through value references, depends_on ensures the correct creation order.",
+        "tags": ["cert", "resources", "dependencias"]
+      },
+      {
+        "id": "lifecycle-validation-q011",
+        "type": "single-choice",
+        "question": "¿Qué diferencia hay entre `validation` de una variable y `precondition` de un resource?",
+        "options": [
+          { "id": "a", "text": "No hay diferencia, ambas verifican condiciones antes del plan" },
+          { "id": "b", "text": "validation verifica la variable antes del plan; precondition verifica condiciones del recurso durante el apply" },
+          { "id": "c", "text": "validation es para variables locales; precondition es para variables de input" },
+          { "id": "d", "text": "precondition se evalúa antes que validation" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "validation se ejecuta al recibir el valor de la variable (antes del plan). precondition se ejecuta durante el apply, antes de operar el recurso. Pueden usar valores known after apply que validation no puede.",
+        "tags": ["cert", "new-004", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q012",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes afirmaciones sobre `replace_triggered_by` son correctas? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Forma parte del bloque lifecycle" },
+          { "id": "b", "text": "Fuerza la recreación del recurso cuando los recursos o atributos especificados cambian" },
+          { "id": "c", "text": "Solo puede referenciar recursos del mismo tipo" },
+          { "id": "d", "text": "Es una característica del examen TA-004 (Terraform 1.x)" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "replace_triggered_by está en el bloque lifecycle, fuerza recreación cuando los recursos/atributos especificados cambian, y es una característica cubierta en TA-004. Puede referenciar cualquier recurso, no solo del mismo tipo.",
+        "tags": ["cert", "new-004", "resources", "lifecycle"]
+      },
+      {
+        "id": "lifecycle-validation-q013",
+        "type": "single-choice",
+        "question": "¿Cuál es el orden de evaluación correcto para las validaciones en Terraform?",
+        "options": [
+          { "id": "a", "text": "postcondition → precondition → validation" },
+          { "id": "b", "text": "validation → precondition → [apply] → postcondition" },
+          { "id": "c", "text": "precondition → validation → [apply] → postcondition" },
+          { "id": "d", "text": "validation → [apply] → precondition → postcondition" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El orden es: validation (al recibir la variable, antes del plan) → precondition (durante apply, antes del recurso) → [creación/actualización del recurso] → postcondition (durante apply, después del recurso).",
+        "tags": ["cert", "new-004", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q014",
+        "type": "true-false",
+        "question": "Es posible tener múltiples bloques `validation` dentro de una sola variable en Terraform.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Una variable puede tener múltiples bloques validation, cada uno con su propia condición y mensaje de error. Esto permite validaciones más granulares con mensajes de error específicos para cada condición.",
+        "tags": ["cert", "variables", "validacion"]
+      },
+      {
+        "id": "lifecycle-validation-q015",
+        "type": "single-choice",
+        "question": "Un equipo tiene un Auto Scaling Group que debe recrearse cuando cambia el launch template, aunque el ASG mismo no tenga cambios de configuración. ¿Qué lifecycle argument usar?",
+        "options": [
+          { "id": "a", "text": "ignore_changes = [launch_template]" },
+          { "id": "b", "text": "create_before_destroy = true" },
+          { "id": "c", "text": "replace_triggered_by = [aws_launch_template.main.id]" },
+          { "id": "d", "text": "depends_on = [aws_launch_template.main]" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "replace_triggered_by fuerza la recreación del recurso cuando otro recurso o atributo cambia. Si el launch template cambia, el ASG se destruye y recrea para tomar la nueva configuración. Es exactamente el caso de uso para este meta-argument.",
+        "tags": ["cert", "new-004", "resources", "lifecycle"]
+      },
+      {
+        "id": "lifecycle-validation-q016",
+        "type": "single-choice",
+        "question": "¿Qué significa que Terraform detecte un 'cycle error' al ejecutar plan?",
+        "options": [
+          { "id": "a", "text": "Terraform está en un bucle infinito calculando el plan" },
+          { "id": "b", "text": "Existe una dependencia circular: A depende de B, B depende de C y C depende de A" },
+          { "id": "c", "text": "Un recurso fue modificado y necesita ser recreado en un ciclo" },
+          { "id": "d", "text": "El plan tardó demasiado tiempo y Terraform lo canceló" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Un cycle error indica dependencia circular en el grafo de recursos. Terraform no puede determinar el orden de creación cuando hay ciclos. La solución es refactorizar la configuración para eliminar la dependencia circular.",
+        "tags": ["cert", "resources", "dependencias"]
+      },
+      {
+        "id": "lifecycle-validation-q017",
+        "type": "single-choice",
+        "question": "After deploying infrastructure, a team wants to verify that their load balancer endpoint responds with HTTP 200 without blocking the apply if it doesn't. Which Terraform construct should they use?",
+        "options": [
+          { "id": "a", "text": "A postcondition inside the load balancer resource lifecycle" },
+          { "id": "b", "text": "A check block with an assert and a data source for HTTP" },
+          { "id": "c", "text": "A precondition checking the endpoint before creating the load balancer" },
+          { "id": "d", "text": "A validation block on the load balancer URL variable" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "The check block is designed for non-blocking health assertions after deploy. It can include data sources (like a http data source) and assert blocks. If the assertion fails, it reports a warning without reverting the apply.",
+        "tags": ["cert", "new-004", "check"]
+      },
+      {
+        "id": "lifecycle-validation-q018",
+        "type": "true-false",
+        "question": "Al usar `ignore_changes = all`, Terraform aún detectará y reportará drift en el siguiente plan.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "Con ignore_changes = all, Terraform ignora todos los cambios detectados en el recurso. No reportará drift ni planificará actualizaciones, independientemente de cuánto cambie el recurso externamente.",
+        "tags": ["cert", "resources", "lifecycle"]
+      }
+    ]
+  }
+}

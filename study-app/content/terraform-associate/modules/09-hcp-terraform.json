@@ -1,0 +1,507 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "hcp-terraform",
+    "order": 9,
+    "name": "HCP Terraform",
+    "description": "HCP Terraform (antes Terraform Cloud): workspaces, workflows, variables, teams, bloque cloud vs backend remote",
+    "estimatedMinutes": 55
+  },
+  "flashcards": [
+    {
+      "id": "hcp-terraform-001",
+      "question": "¿Qué es HCP Terraform?",
+      "answer": "HashiCorp Cloud Platform Terraform (antes Terraform Cloud). Servicio SaaS de HashiCorp para ejecutar Terraform de forma remota, con state management, RBAC, VCS integration y más. Tiene tier gratuito.",
+      "explanation": "HCP Terraform no requiere instalar ni mantener servidores. Gestiona el state, ejecuta plans y applies de forma remota, integra con GitHub/GitLab/Bitbucket, y provee visibilidad de la infraestructura. Terraform Enterprise es la versión self-hosted para organizaciones.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "fundamentos"]
+    },
+    {
+      "id": "hcp-terraform-002",
+      "question": "¿Cuál es la diferencia CRÍTICA entre CLI workspaces y HCP Terraform workspaces?",
+      "answer": "CLI workspaces: múltiples states para la misma configuración/backend, comparten código y backend. HCP Terraform workspaces: unidades de infraestructura completas con state, variables, ejecuciones, VCS y permisos propios.",
+      "explanation": "CLI workspace dev y workspace prod comparten el mismo terraform.tf y el mismo backend S3; solo tienen states separados. HCP workspace 'vpc-prod' puede tener su propio repositorio, variables distintas, permisos de equipo específicos y un state completamente separado. Son conceptos diferentes.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "workspaces"]
+    },
+    {
+      "id": "hcp-terraform-003",
+      "question": "¿Qué es el bloque `cloud {}` y cuándo reemplazó al backend `remote`?",
+      "answer": "El bloque `cloud {}` es la integración recomendada con HCP Terraform desde Terraform 1.1. El backend `remote` sigue documentado pero está en desuso activo para nuevas configuraciones.",
+      "explanation": "El bloque cloud soporta tags de workspace, variable sets y nuevas características que el backend remote no implementará. Ejemplo: `terraform { cloud { organization = \"mi-org\" workspaces { name = \"mi-workspace\" } } }`. El backend remote aún funciona pero no debe usarse en nuevos proyectos.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "backend"]
+    },
+    {
+      "id": "hcp-terraform-004",
+      "question": "¿Qué diferencia hay entre el bloque `cloud {}` y el backend `remote`?",
+      "answer": "cloud {}: integración moderna (1.1+), soporta tags de workspace, variable sets, nuevas features. backend remote: integración legacy, documentada pero en desuso activo, no recibirá nuevas características.",
+      "explanation": "Ejemplo cloud: `cloud { organization = \"mi-org\" workspaces { tags = [\"production\"] } }` — selecciona workspaces por tag. El backend remote solo soporta name o prefix, no tags. Migrar de remote a cloud es recomendable para nuevas configuraciones.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "backend"]
+    },
+    {
+      "id": "hcp-terraform-005",
+      "question": "¿Qué es el VCS-driven workflow en HCP Terraform?",
+      "answer": "Flujo donde Terraform se conecta a un repositorio VCS (GitHub, GitLab, etc.) y lanza automáticamente speculative plans en PRs y applies en merges a la rama principal.",
+      "explanation": "Configuración: workspace → VCS → seleccionar repo → rama trigger. Cuando se abre un PR, HCP Terraform hace un plan especulativo y publica el resultado como comentario. Al hacer merge, puede iniciar el apply automáticamente o esperar aprobación.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "hcp-terraform-006",
+      "question": "¿Qué es el CLI-driven workflow en HCP Terraform?",
+      "answer": "Flujo donde el desarrollador ejecuta comandos `terraform plan/apply` localmente, pero la ejecución real ocurre en los runners de HCP Terraform (remoto). El state se gestiona en HCP.",
+      "explanation": "Con el bloque cloud configurado, `terraform plan` muestra en la terminal local la salida del plan pero la ejecución es remota. Útil cuando se quiere control desde CLI pero con el state y logs centralizados en HCP Terraform.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "hcp-terraform-007",
+      "question": "¿Qué es un speculative plan en HCP Terraform?",
+      "answer": "Un plan de solo lectura que muestra los cambios propuestos sin posibilidad de aplicarlos. Se usa en PRs de VCS para mostrar el impacto de los cambios antes de hacer merge.",
+      "explanation": "Los speculative plans son seguros: no pueden convertirse en applies. Son la base del VCS workflow — el equipo puede revisar el impacto de infrastructure changes en el PR antes de aprobar. No consumen créditos de apply.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "hcp-terraform-008",
+      "question": "¿Qué tipos de variables existen en HCP Terraform workspaces?",
+      "answer": "Variables de Terraform (equivalen a variables de input en HCL) y variables de entorno (environment variables, disponibles durante la ejecución). Ambas pueden marcarse como sensitive.",
+      "explanation": "Variables Terraform: se pasan como si fueran -var en el plan/apply. Variables de entorno: disponibles como variables de entorno del proceso (útil para credenciales de provider: AWS_ACCESS_KEY_ID, etc.). Las sensitive se almacenan cifradas y no pueden leerse de vuelta.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "variables"]
+    },
+    {
+      "id": "hcp-terraform-009",
+      "question": "¿Qué son los Variable Sets en HCP Terraform?",
+      "answer": "Colecciones de variables reutilizables que pueden aplicarse a múltiples workspaces. Evitan duplicar variables comunes (como credenciales de AWS) en cada workspace.",
+      "explanation": "Ejemplo: un variable set 'AWS-Credentials' con AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY puede aplicarse a todos los workspaces de producción. Si rotan las credenciales, se cambian en el variable set y todos los workspaces se actualizan.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "variables"]
+    },
+    {
+      "id": "hcp-terraform-010",
+      "question": "¿Qué son los teams en HCP Terraform y qué permisos pueden tener?",
+      "answer": "Grupos de usuarios con niveles de acceso a workspaces. Permisos por workspace: Read, Plan, Write, Admin. Permisos de organización: manage workspaces, manage policies, manage providers.",
+      "explanation": "Ejemplo: equipo 'developers' tiene Plan en workspaces de staging (pueden ver el plan pero no aplicar), y Write en workspaces de desarrollo (pueden aplicar). El equipo 'ops' tiene Admin en producción.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "teams", "rbac"]
+    },
+    {
+      "id": "hcp-terraform-011",
+      "question": "¿Qué son los proyectos (projects) en HCP Terraform?",
+      "answer": "Agrupaciones de workspaces dentro de una organización. Permiten organizar workspaces relacionados y aplicar políticas o permisos a nivel de proyecto.",
+      "explanation": "Ejemplo: proyecto 'production-vpc' agrupa todos los workspaces relacionados con la infraestructura de red de producción. Proyectos facilitan la gestión de permisos a gran escala: otorgar acceso a un proyecto en lugar de workspace por workspace.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "proyectos"]
+    },
+    {
+      "id": "hcp-terraform-012",
+      "question": "¿Qué es Sentinel en el contexto de HCP Terraform?",
+      "answer": "Framework de Policy as Code de HashiCorp integrado en HCP Terraform. Permite definir políticas que se evalúan en cada plan/apply para garantizar cumplimiento de estándares de seguridad, costo o gobierno.",
+      "explanation": "Ejemplo de policy Sentinel: 'ningún recurso de producción puede crearse sin tags de cost_center'. Si el plan incluye un recurso sin esa tag, la policy falla y el apply no puede ejecutarse. Solo disponible en tiers de pago de HCP Terraform.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "sentinel", "policy"]
+    },
+    {
+      "id": "hcp-terraform-013",
+      "question": "¿Qué es OPA (Open Policy Agent) en el contexto de HCP Terraform?",
+      "answer": "Alternativa open-source a Sentinel para Policy as Code. HCP Terraform soporta OPA como motor de políticas desde versiones recientes, con políticas escritas en el lenguaje Rego.",
+      "explanation": "OPA es más común en el ecosistema cloud-native. Sentinel es nativo de HashiCorp. Ambos permiten definir reglas que se evalúan antes de aplicar cambios. Para el examen TA-004 es suficiente conocer que existen como opciones de policy enforcement.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "opa", "policy"]
+    },
+    {
+      "id": "hcp-terraform-014",
+      "question": "¿Qué es el Private Registry de HCP Terraform?",
+      "answer": "Registro privado dentro de una organización de HCP Terraform para publicar y compartir módulos y providers propios, sin hacerlos públicos en registry.terraform.io.",
+      "explanation": "Los módulos en el Private Registry se referencian con `source = \"app.terraform.io/mi-org/vpc/aws\"`. Soportan versionado (semver) y documentación. Permite a las organizaciones mantener bibliotecas de módulos internos reutilizables.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "registry"]
+    },
+    {
+      "id": "hcp-terraform-015",
+      "question": "¿Qué es un Run Task en HCP Terraform?",
+      "answer": "Integración de herramientas externas en el pipeline de ejecución de Terraform. Permite ejecutar análisis de seguridad, validaciones de costos u otras herramientas antes o después del plan/apply.",
+      "explanation": "Ejemplo: integrar Checkov (análisis de seguridad IaC) como Run Task. Antes de que apply se complete, Checkov analiza el plan y puede bloquear si detecta configuraciones inseguras. Similar a Sentinel pero usando herramientas externas vía webhook.",
+      "difficulty": "advanced",
+      "tags": ["cert", "hcp-terraform", "run-tasks"]
+    },
+    {
+      "id": "hcp-terraform-016",
+      "question": "¿Cuándo se ejecuta un apply automáticamente en el VCS-driven workflow?",
+      "answer": "Solo si el workspace tiene `Auto Apply` habilitado Y la ejecución fue disparada por un evento VCS (merge a rama principal). Sin Auto Apply, el apply espera confirmación manual.",
+      "explanation": "Auto Apply es opcional y potencialmente riesgoso en producción. En la mayoría de los equipos, el workspace de producción tiene Auto Apply deshabilitado para que un humano confirme antes de aplicar cambios en producción.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "hcp-terraform-017",
+      "question": "¿Qué información almacena un workspace de HCP Terraform?",
+      "answer": "State history, historial de runs (plans y applies), variables de workspace, configuración VCS, logs de cada run, políticas aplicadas y permisos de equipo.",
+      "explanation": "Un workspace en HCP Terraform es la unidad de infraestructura completa. Cuando una app tiene un HCP workspace, todo el contexto de su infraestructura está centralizado: quién la modificó, cuándo, qué cambios se hicieron y cuál es el state actual.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "workspaces"]
+    },
+    {
+      "id": "hcp-terraform-018",
+      "question": "¿Qué es el API-driven workflow en HCP Terraform?",
+      "answer": "Flujo donde Terraform se controla programáticamente mediante la API REST de HCP Terraform. Útil para pipelines CI/CD complejos que necesitan control fino sobre cuándo y cómo se ejecutan los runs.",
+      "explanation": "Ejemplo: un pipeline de GitHub Actions hace una llamada a la API de HCP Terraform para iniciar un run, espera el resultado y decide si aprobar el apply basándose en el código de salida. Más control que el CLI workflow pero más complejo de implementar.",
+      "difficulty": "advanced",
+      "tags": ["cert", "hcp-terraform", "workflow", "api"]
+    },
+    {
+      "id": "hcp-terraform-019",
+      "question": "¿Qué ventaja tiene HCP Terraform sobre el state local para equipos?",
+      "answer": "State remoto centralizado con locking automático, historial de versiones del state, RBAC, logs de ejecución, integración VCS, speculative plans en PRs y notificaciones de cambios.",
+      "explanation": "Con state local, dos personas pueden aplicar simultáneamente y corromper el state. HCP Terraform serializa las ejecuciones, mantiene quién aplicó qué y cuándo, y permite que equipos colaboren con visibilidad completa.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "equipo"]
+    },
+    {
+      "id": "hcp-terraform-020",
+      "question": "¿Cómo selecciona el bloque `cloud {}` qué workspaces usar, comparado con el backend `remote`?",
+      "answer": "cloud {}: soporta selección por `name` (workspace específico) o `tags` (todos los workspaces con esas etiquetas). backend remote: solo soporta `name` (un workspace) o `prefix` (múltiples workspaces por prefijo de nombre).",
+      "explanation": "Selección por tags en cloud{}: `workspaces { tags = [\"networking\", \"production\"] }` — cualquier workspace con esas tags. Esta capacidad no existe en el backend remote, siendo una ventaja clave del bloque cloud.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "workspaces", "backend"]
+    },
+    {
+      "id": "hcp-terraform-021",
+      "question": "¿Qué diferencia hay entre las variables sensitive en HCP Terraform y los outputs sensitive en Terraform OSS?",
+      "answer": "En HCP Terraform: las variables sensitive se almacenan cifradas y no pueden leerse de vuelta (ni desde la UI ni la API). En Terraform OSS: sensitive solo oculta la salida CLI pero el valor está en el state en texto plano.",
+      "explanation": "HCP Terraform cifra y protege realmente los valores sensitive en su plataforma. Alguien con acceso al workspace no puede recuperar el valor de una variable sensitive. En Terraform OSS, el valor está en el state y puede extraerse.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "variables", "seguridad"]
+    },
+    {
+      "id": "hcp-terraform-022",
+      "question": "¿Qué es Terraform Enterprise?",
+      "answer": "La versión self-hosted de HCP Terraform, diseñada para organizaciones que necesitan ejecutar Terraform en su propia infraestructura (on-premise o nube privada) por razones de cumplimiento o seguridad.",
+      "explanation": "Terraform Enterprise tiene las mismas funcionalidades que HCP Terraform (Sentinel, RBAC, Private Registry, etc.) pero se instala en infraestructura propia. El examen TA-004 puede mencionar la existencia de Enterprise vs HCP Terraform SaaS.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "enterprise"]
+    },
+    {
+      "id": "hcp-terraform-023",
+      "question": "¿Qué ocurre con el state cuando se usa el bloque `cloud {}`?",
+      "answer": "El state se almacena en HCP Terraform, no localmente. No se crea ningún archivo terraform.tfstate en el disco. HCP Terraform gestiona el locking, el historial de versiones y el acceso al state.",
+      "explanation": "Con el bloque cloud, `terraform init` configura la integración con HCP Terraform. Los plans y applies se ejecutan en los runners de HCP. El state local desaparece — todo está centralizado en HCP Terraform.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "state"]
+    },
+    {
+      "id": "hcp-terraform-024",
+      "question": "¿Qué es un 'run' en HCP Terraform?",
+      "answer": "Una unidad de trabajo en HCP Terraform que consiste en una secuencia: plan → (policy checks) → apply (si es aprobado). Cada run tiene su propio log, resultado y estado.",
+      "explanation": "Un run puede ser: triggered by VCS (commit/merge), disparado por CLI (terraform apply), o creado por la API. Cada run tiene un ID único, está asociado a un workspace, y su historial es auditable.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "hcp-terraform-025",
+      "question": "¿Qué información incluye el historial de state en HCP Terraform?",
+      "answer": "Cada versión del state con: quién la creó, cuándo, el run que la generó y la posibilidad de hacer rollback a una versión anterior.",
+      "explanation": "En S3 con versionado se puede recuperar versiones anteriores del state. En HCP Terraform, la UI muestra el historial con contexto completo (usuario, run, cambios). El rollback en HCP Terraform se hace desde la UI sin necesidad de terraform state push.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "state"]
+    },
+    {
+      "id": "hcp-terraform-026",
+      "question": "¿Qué es el 'workspace locking' en HCP Terraform?",
+      "answer": "Mecanismo que impide que múltiples runs se ejecuten simultáneamente en el mismo workspace. Cuando un run está en progreso, otros quedan en cola.",
+      "explanation": "HCP Terraform serializa automáticamente las ejecuciones por workspace. No necesitas configurar DynamoDB ni use_lockfile — el locking está integrado. Si alguien hace apply mientras otro está en progreso, el segundo se encola automáticamente.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "locking"]
+    },
+    {
+      "id": "hcp-terraform-027",
+      "question": "¿Cómo se autentica la CLI de Terraform con HCP Terraform?",
+      "answer": "Con `terraform login`, que abre el navegador para obtener un token de API y lo guarda en el archivo de credenciales de Terraform (`~/.terraform.d/credentials.tfrc.json`).",
+      "explanation": "`terraform login` es el comando estándar. Alternativamente, se puede configurar la variable de entorno `TF_TOKEN_app_terraform_io` o crear el archivo de credenciales manualmente. En CI/CD se usa la variable de entorno para evitar autenticación interactiva.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "autenticacion"]
+    },
+    {
+      "id": "hcp-terraform-028",
+      "question": "¿Qué son las notificaciones (notifications) en HCP Terraform?",
+      "answer": "Integraciones que envían alertas a Slack, email, webhooks u otros destinos cuando ocurren eventos en un workspace: plan completado, apply iniciado, run fallido, necesita aprobación, etc.",
+      "explanation": "Configuradas por workspace. Permiten que el equipo sepa qué está pasando en la infraestructura sin estar mirando la UI constantemente. Los webhooks permiten integración con cualquier sistema.",
+      "difficulty": "basic",
+      "tags": ["cert", "hcp-terraform", "notificaciones"]
+    },
+    {
+      "id": "hcp-terraform-029",
+      "question": "¿Cuáles son los modos de ejecución disponibles en un workspace de HCP Terraform?",
+      "answer": "Remote (ejecución en runners de HCP), Local (ejecución local pero state en HCP), y Agent (ejecución en un agente self-hosted en la infraestructura del cliente).",
+      "explanation": "Remote: lo más común, HCP maneja todo. Local: útil para debugging o cuando el código necesita acceso a recursos que los runners de HCP no pueden alcanzar. Agent: para entornos air-gapped o recursos en red privada no alcanzables desde HCP.",
+      "difficulty": "advanced",
+      "tags": ["cert", "hcp-terraform", "workflow"]
+    },
+    {
+      "id": "hcp-terraform-030",
+      "question": "¿Qué ventaja tienen los Variable Sets sobre las variables de workspace en HCP Terraform?",
+      "answer": "Los Variable Sets se definen una vez y se aplican a múltiples workspaces. Las variables de workspace son específicas de ese workspace. Variable Sets evitan duplicación de credenciales y configuraciones comunes.",
+      "explanation": "Ejemplo: credenciales de AWS gestionadas en un Variable Set aplicado a todos los workspaces. Si rotan las credenciales, se actualiza en un solo lugar. Con variables de workspace, habría que actualizar cada workspace individualmente.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "hcp-terraform", "variables"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 85,
+    "questions": [
+      {
+        "id": "hcp-terraform-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia fundamental entre CLI workspaces de Terraform y workspaces de HCP Terraform?",
+        "options": [
+          { "id": "a", "text": "Son lo mismo, solo difieren en la interfaz de gestión" },
+          { "id": "b", "text": "CLI workspaces son múltiples states para la misma configuración; HCP workspaces son unidades de infraestructura completas con state, variables y runs propios" },
+          { "id": "c", "text": "CLI workspaces solo existen en Terraform Enterprise; HCP workspaces son la versión cloud" },
+          { "id": "d", "text": "HCP workspaces no soportan state remoto; CLI workspaces sí" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "CLI workspaces comparten configuración y backend, solo tienen states separados. HCP Terraform workspaces son unidades autónomas de infraestructura con su propio state, variables, historial de ejecuciones, integración VCS y permisos.",
+        "tags": ["cert", "hcp-terraform", "workspaces"]
+      },
+      {
+        "id": "hcp-terraform-q002",
+        "type": "single-choice",
+        "question": "¿Cuál es el bloque recomendado para integrar una configuración de Terraform con HCP Terraform en versiones modernas (1.1+)?",
+        "options": [
+          { "id": "a", "text": "backend \"remote\" {}" },
+          { "id": "b", "text": "cloud {}" },
+          { "id": "c", "text": "terraform_cloud {}" },
+          { "id": "d", "text": "hcp {}" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El bloque cloud {} es la integración recomendada desde Terraform 1.1. El backend remote está en desuso activo para nuevas configuraciones. cloud {} soporta más características como selección por tags de workspace.",
+        "tags": ["cert", "hcp-terraform", "backend"]
+      },
+      {
+        "id": "hcp-terraform-q003",
+        "type": "single-choice",
+        "question": "¿Qué es un speculative plan en HCP Terraform?",
+        "options": [
+          { "id": "a", "text": "Un plan que se aplica automáticamente sin confirmación" },
+          { "id": "b", "text": "Un plan de solo lectura que muestra cambios propuestos pero no puede convertirse en apply" },
+          { "id": "c", "text": "Un plan que verifica solo las políticas Sentinel sin calcular cambios de recursos" },
+          { "id": "d", "text": "Un plan ejecutado en un workspace de staging antes de producción" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los speculative plans son de solo lectura. Se usan en PRs del VCS workflow para mostrar el impacto de los cambios. No pueden convertirse en applies, lo que los hace seguros para revisión en pull requests.",
+        "tags": ["cert", "hcp-terraform", "workflow"]
+      },
+      {
+        "id": "hcp-terraform-q004",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son tipos de variables en un workspace de HCP Terraform? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "Variables de Terraform (equivalentes a input variables)" },
+          { "id": "b", "text": "Variables de entorno (environment variables)" },
+          { "id": "c", "text": "Variables de state (state variables)" },
+          { "id": "d", "text": "Variable Sets compartidos entre workspaces" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "HCP Terraform soporta: variables de Terraform (pasadas como -var), variables de entorno (disponibles durante la ejecución como env vars), y Variable Sets (colecciones reutilizables). No existen 'state variables'.",
+        "tags": ["cert", "hcp-terraform", "variables"]
+      },
+      {
+        "id": "hcp-terraform-q005",
+        "type": "true-false",
+        "question": "En HCP Terraform, las variables marcadas como sensitive pueden recuperarse desde la UI o la API una vez guardadas.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "En HCP Terraform, las variables sensitive se almacenan cifradas y NO pueden leerse de vuelta. Ni la UI ni la API pueden recuperar el valor. Solo se puede sobreescribir. Esto es diferente a sensitive en Terraform OSS donde el valor está en el state.",
+        "tags": ["cert", "hcp-terraform", "variables", "seguridad"]
+      },
+      {
+        "id": "hcp-terraform-q006",
+        "type": "single-choice",
+        "question": "¿Qué ventaja tienen los Variable Sets sobre las variables definidas directamente en cada workspace?",
+        "options": [
+          { "id": "a", "text": "Los Variable Sets son más rápidos de procesar durante el plan" },
+          { "id": "b", "text": "Permiten definir variables una vez y aplicarlas a múltiples workspaces, evitando duplicación" },
+          { "id": "c", "text": "Los Variable Sets soportan tipos de datos que las variables de workspace no soportan" },
+          { "id": "d", "text": "Solo los Variable Sets pueden contener variables de entorno" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los Variable Sets son reutilizables: se definen una vez y se aplican a múltiples workspaces o proyectos. Son ideales para credenciales de provider y configuraciones comunes. Si rotan, se actualiza en un lugar y todos los workspaces se benefician.",
+        "tags": ["cert", "hcp-terraform", "variables"]
+      },
+      {
+        "id": "hcp-terraform-q007",
+        "type": "single-choice",
+        "question": "¿Qué comando se usa para autenticar la CLI de Terraform con HCP Terraform?",
+        "options": [
+          { "id": "a", "text": "terraform auth login" },
+          { "id": "b", "text": "terraform cloud login" },
+          { "id": "c", "text": "terraform login" },
+          { "id": "d", "text": "terraform init --cloud" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "terraform login abre el navegador para obtener un token de API de HCP Terraform y lo guarda en ~/.terraform.d/credentials.tfrc.json. En CI/CD se usa la variable de entorno TF_TOKEN_app_terraform_io.",
+        "tags": ["cert", "hcp-terraform", "autenticacion"]
+      },
+      {
+        "id": "hcp-terraform-q008",
+        "type": "single-choice",
+        "question": "A team uses the VCS workflow in HCP Terraform connected to GitHub. What happens when a developer opens a Pull Request that modifies Terraform configuration?",
+        "options": [
+          { "id": "a", "text": "HCP Terraform automatically applies the changes to production" },
+          { "id": "b", "text": "HCP Terraform runs a speculative plan and posts the results as a PR comment" },
+          { "id": "c", "text": "The PR is blocked until a manual terraform plan is run locally" },
+          { "id": "d", "text": "HCP Terraform creates a new workspace for the PR branch" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "In the VCS workflow, opening a PR triggers a speculative plan in HCP Terraform. The plan results are posted as a comment on the PR, allowing reviewers to see the infrastructure impact before approving the merge.",
+        "tags": ["cert", "hcp-terraform", "workflow"]
+      },
+      {
+        "id": "hcp-terraform-q009",
+        "type": "true-false",
+        "question": "El bloque `backend \"remote\"` y el bloque `cloud {}` son equivalentes en funcionalidad y ambos son igualmente recomendados.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "No son equivalentes. El bloque cloud {} es la integración moderna (recomendada desde 1.1) y soporta selección por tags, variable sets y nuevas características. El backend remote está en desuso activo y no recibirá nuevas funcionalidades.",
+        "tags": ["cert", "hcp-terraform", "backend"]
+      },
+      {
+        "id": "hcp-terraform-q010",
+        "type": "single-choice",
+        "question": "¿Qué son los proyectos (projects) en HCP Terraform?",
+        "options": [
+          { "id": "a", "text": "Repositorios de código Terraform gestionados por HCP" },
+          { "id": "b", "text": "Agrupaciones de workspaces dentro de una organización para organización y gestión de permisos" },
+          { "id": "c", "text": "Instancias separadas de HCP Terraform con su propia organización" },
+          { "id": "d", "text": "Plantillas de configuración reutilizables en múltiples workspaces" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los proyectos agrupan workspaces relacionados dentro de una organización. Permiten organizar workspaces lógicamente (ej: proyecto 'vpc-infrastructure') y aplicar permisos a nivel de proyecto en lugar de workspace por workspace.",
+        "tags": ["cert", "hcp-terraform", "proyectos"]
+      },
+      {
+        "id": "hcp-terraform-q011",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia entre Sentinel y OPA en el contexto de HCP Terraform?",
+        "options": [
+          { "id": "a", "text": "Sentinel es de código abierto; OPA es propietario de HashiCorp" },
+          { "id": "b", "text": "Sentinel es el motor de policies nativo de HashiCorp; OPA es una alternativa open-source que HCP Terraform también soporta" },
+          { "id": "c", "text": "Sentinel solo funciona con resources de AWS; OPA es multi-cloud" },
+          { "id": "d", "text": "No hay diferencia, son el mismo motor con nombres distintos" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Sentinel es el framework de Policy as Code propio de HashiCorp, integrado nativamente en HCP Terraform. OPA (Open Policy Agent) es open-source y usa el lenguaje Rego. HCP Terraform soporta ambos como motores de políticas.",
+        "tags": ["cert", "hcp-terraform", "sentinel", "opa"]
+      },
+      {
+        "id": "hcp-terraform-q012",
+        "type": "single-choice",
+        "question": "What is the purpose of the HCP Terraform Private Registry?",
+        "options": [
+          { "id": "a", "text": "To store Terraform state files privately" },
+          { "id": "b", "text": "To publish and share internal modules and providers within an organization without making them public" },
+          { "id": "c", "text": "To create a local mirror of registry.terraform.io" },
+          { "id": "d", "text": "To store sensitive variables for workspaces" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "The Private Registry allows organizations to publish and share their own modules and providers internally. Modules are referenced as source = \"app.terraform.io/org/module/provider\" and support versioning and documentation.",
+        "tags": ["cert", "hcp-terraform", "registry"]
+      },
+      {
+        "id": "hcp-terraform-q013",
+        "type": "multiple-choice",
+        "question": "¿Cuáles son los tres workflows principales para ejecutar Terraform en HCP Terraform? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "VCS-driven workflow" },
+          { "id": "b", "text": "CLI-driven workflow" },
+          { "id": "c", "text": "GUI-driven workflow" },
+          { "id": "d", "text": "API-driven workflow" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "Los tres workflows son: VCS-driven (trigger por commits/PRs), CLI-driven (terraform plan/apply desde CLI local con ejecución remota) y API-driven (control programático mediante la API REST de HCP). No existe un GUI-driven workflow como tal.",
+        "tags": ["cert", "hcp-terraform", "workflow"]
+      },
+      {
+        "id": "hcp-terraform-q014",
+        "type": "single-choice",
+        "question": "¿Qué ocurre con el archivo `terraform.tfstate` local cuando se usa el bloque `cloud {}`?",
+        "options": [
+          { "id": "a", "text": "Se crea en el directorio local como de costumbre" },
+          { "id": "b", "text": "No se crea archivo local; el state se almacena completamente en HCP Terraform" },
+          { "id": "c", "text": "Se crea un archivo .tfstate vacío como referencia" },
+          { "id": "d", "text": "Se crea un archivo de caché local que sincroniza con HCP" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Con el bloque cloud {}, el state se gestiona completamente en HCP Terraform. No se crea terraform.tfstate en el disco local. Toda la información del state está en HCP Terraform con historial de versiones y locking automático.",
+        "tags": ["cert", "hcp-terraform", "state"]
+      },
+      {
+        "id": "hcp-terraform-q015",
+        "type": "true-false",
+        "question": "Terraform Enterprise es la misma plataforma que HCP Terraform pero instalada en la infraestructura propia de la organización.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Terraform Enterprise es la versión self-hosted con las mismas funcionalidades que HCP Terraform (Sentinel, RBAC, Private Registry, etc.) pero que se instala en la infraestructura propia. Para organizaciones con requisitos de compliance que no pueden usar SaaS.",
+        "tags": ["cert", "hcp-terraform", "enterprise"]
+      },
+      {
+        "id": "hcp-terraform-q016",
+        "type": "single-choice",
+        "question": "Un equipo tiene 20 workspaces que todos necesitan las mismas credenciales de AWS. ¿Cuál es la mejor solución en HCP Terraform?",
+        "options": [
+          { "id": "a", "text": "Agregar las credenciales manualmente en cada uno de los 20 workspaces" },
+          { "id": "b", "text": "Crear un Variable Set con las credenciales y aplicarlo a los 20 workspaces" },
+          { "id": "c", "text": "Hardcodear las credenciales en el código Terraform" },
+          { "id": "d", "text": "Usar el mismo workspace para todos los recursos y cambiar las credenciales según sea necesario" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los Variable Sets son la solución correcta. Se definen una vez y se aplican a múltiples workspaces. Si las credenciales rotan, se actualiza el Variable Set y todos los workspaces se benefician automáticamente.",
+        "tags": ["cert", "hcp-terraform", "variables"]
+      },
+      {
+        "id": "hcp-terraform-q017",
+        "type": "single-choice",
+        "question": "¿Cuál es la ventaja principal del bloque `cloud {}` sobre el backend `remote` para selección de workspaces?",
+        "options": [
+          { "id": "a", "text": "cloud {} puede conectarse a múltiples organizaciones simultáneamente" },
+          { "id": "b", "text": "cloud {} soporta selección de workspaces por tags, además de por nombre" },
+          { "id": "c", "text": "cloud {} no requiere autenticación mientras que remote sí" },
+          { "id": "d", "text": "cloud {} soporta más tipos de recursos que remote" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El bloque cloud {} soporta `workspaces { tags = [\"production\"] }` para seleccionar todos los workspaces con esas etiquetas. El backend remote solo soporta `name` o `prefix`. La selección por tags es una ventaja significativa para gestionar muchos workspaces.",
+        "tags": ["cert", "hcp-terraform", "workspaces", "backend"]
+      },
+      {
+        "id": "hcp-terraform-q018",
+        "type": "single-choice",
+        "question": "What happens when two runs are triggered simultaneously for the same HCP Terraform workspace?",
+        "options": [
+          { "id": "a", "text": "Both runs execute in parallel, potentially corrupting the state" },
+          { "id": "b", "text": "The workspace rejects the second run with an error" },
+          { "id": "c", "text": "The second run is queued and waits for the first to complete" },
+          { "id": "d", "text": "HCP Terraform merges both runs into a single plan" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "HCP Terraform serializes runs per workspace with automatic locking. When a run is in progress, subsequent runs are queued. This prevents concurrent modifications that could corrupt the state, which is a key advantage over local state management.",
+        "tags": ["cert", "hcp-terraform", "locking"]
+      }
+    ]
+  }
+}

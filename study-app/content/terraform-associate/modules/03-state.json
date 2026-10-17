@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "contentVersion": "1.0.0",
+  "contentVersion": "2.0.0",
   "type": "study-module",
   "certificationId": "terraform-associate",
   "language": "es-MX",
@@ -8,93 +8,253 @@
     "id": "state",
     "order": 3,
     "name": "State Management",
-    "description": "State local y remoto, backends, bloqueo de estado y operaciones de gestión",
-    "estimatedMinutes": 50
+    "description": "State local y remoto, backends, locking nativo vs DynamoDB (deprecado), refresh-only, drift, moved/removed declarativos y operaciones de state",
+    "estimatedMinutes": 65
   },
   "flashcards": [
     {
       "id": "state-001",
-      "question": "¿Qué es el Terraform state?",
-      "answer": "Archivo (terraform.tfstate) que registra el estado actual de la infraestructura gestionada. Mapea los recursos definidos en la configuración con los objetos reales en el proveedor.",
-      "explanation": "El state permite a Terraform saber qué infraestructura existe, detectar diferencias con la configuración actual y planificar cambios. Sin él, Terraform no sabría qué gestiona.",
+      "question": "¿Qué es el Terraform state y por qué es crítico?",
+      "answer": "Archivo JSON (`terraform.tfstate`) que mapea los recursos declarados en la configuración con los objetos reales en el proveedor. Es la fuente de verdad de Terraform sobre qué gestiona.",
+      "explanation": "Sin el state, Terraform no sabe qué infraestructura existe ni qué gestiona. Permite calcular el diff entre el estado deseado y el actual. Si se pierde, hay que reconstruirlo con terraform import.",
       "difficulty": "basic",
-      "tags": ["state", "fundamentos"]
+      "tags": ["cert", "state", "fundamentos"]
     },
     {
       "id": "state-002",
       "question": "¿Por qué no se debe commitear `terraform.tfstate` al control de versiones?",
-      "answer": "Porque puede contener información sensible (contraseñas, claves), se desincroniza fácilmente en equipos y puede causar conflictos de merge. Debe usarse un backend remoto.",
-      "explanation": "El state local es problemático en equipos: dos personas hacen apply simultáneo y el state queda corrupto. La solución es remote state (S3, Terraform Cloud, etc.) con locking.",
-      "difficulty": "intermediate",
-      "tags": ["state", "seguridad", "equipo"]
+      "answer": "Puede contener datos sensibles (contraseñas, claves), se desincroniza fácilmente en equipos sin locking, y genera conflictos de merge difíciles de resolver.",
+      "explanation": "En equipos, el state debe vivir en un backend remoto (S3, GCS, HCP Terraform) con locking. El VCS no es el lugar para el state — sirve para el código, no para el estado de la infraestructura.",
+      "difficulty": "basic",
+      "tags": ["cert", "state", "seguridad"]
     },
     {
       "id": "state-003",
       "question": "¿Qué es un backend de Terraform?",
-      "answer": "Configuración que define dónde se almacena y cómo se accede al state file. Puede ser local (por defecto) o remoto (S3, GCS, Azure Blob, Terraform Cloud).",
-      "explanation": "El backend se configura en el bloque terraform { backend { ... } }. Los backends remotos permiten trabajo en equipo, locking y almacenamiento seguro del state.",
+      "answer": "Configuración que define dónde se almacena el state y cómo se accede a él. Puede ser local (default: archivo en disco) o remoto (S3, GCS, Azure Blob, HCP Terraform).",
+      "explanation": "El backend se configura en `terraform { backend \"s3\" { ... } }`. Los backends remotos permiten trabajo en equipo, locking y almacenamiento seguro. Se recomienda siempre usar backend remoto en proyectos reales.",
       "difficulty": "intermediate",
-      "tags": ["state", "backend"]
+      "tags": ["cert", "state", "backend"]
     },
     {
       "id": "state-004",
-      "question": "¿Qué es el state locking?",
-      "answer": "Mecanismo que impide que múltiples operaciones de Terraform modifiquen el state simultáneamente, evitando corrupción del state.",
-      "explanation": "Cuando usas S3 como backend, el locking se implementa con DynamoDB. Terraform Cloud tiene locking nativo. Si un apply falla a mitad y el lock no se libera, se puede forzar con terraform force-unlock.",
+      "question": "¿Cómo se configura el locking en el backend S3 en versiones modernas de Terraform?",
+      "answer": "Con `use_lockfile = true` en el bloque del backend S3 (Terraform ≥ 1.10). Esto crea un objeto con sufijo `.tflock` en el mismo bucket para gestionar el bloqueo de forma nativa.",
+      "explanation": "Con use_lockfile = true, Terraform crea el archivo prod/terraform.tfstate.tflock en S3 al iniciar un apply. El mecanismo con DynamoDB está deprecado. Las nuevas configuraciones deben usar use_lockfile.",
       "difficulty": "intermediate",
-      "tags": ["state", "locking", "equipo"]
+      "tags": ["cert", "state", "locking"]
     },
     {
       "id": "state-005",
-      "question": "¿Qué hace `terraform state list`?",
-      "answer": "Lista todos los recursos actualmente rastreados en el state de Terraform.",
-      "explanation": "Útil para ver qué recursos gestiona Terraform. Muestra los resource addresses como aws_instance.web, module.vpc.aws_vpc.main, etc.",
-      "difficulty": "basic",
-      "tags": ["state", "comandos"]
+      "question": "¿El locking con DynamoDB para el backend S3 sigue siendo válido?",
+      "answer": "Está deprecado como mecanismo recomendado desde Terraform 1.10. Puede seguir usándose durante una migración desde configuraciones existentes hacia `use_lockfile = true`, pero las nuevas configuraciones no deben usarlo.",
+      "explanation": "Si tienes infraestructura existente con DynamoDB para locking, no necesitas migrarlo inmediatamente. Puedes planificarlo. Pero nuevos proyectos deben usar use_lockfile = true desde el inicio.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "deprecated", "state", "locking"]
     },
     {
       "id": "state-006",
-      "question": "¿Para qué sirve `terraform state mv`?",
-      "answer": "Mueve un recurso a una nueva dirección en el state sin destruirlo ni recrearlo. Útil al refactorizar configuración.",
-      "explanation": "Ejemplo: si renombras aws_instance.old a aws_instance.new en tu .tf, debes ejecutar terraform state mv aws_instance.old aws_instance.new para que Terraform no destruya y recree el recurso.",
-      "difficulty": "advanced",
-      "tags": ["state", "comandos", "refactoring"]
+      "question": "¿Qué hace `terraform plan -refresh-only`?",
+      "answer": "Calcula y muestra los cambios necesarios en el state para que refleje el estado real de la infraestructura, sin planificar cambios de configuración.",
+      "explanation": "Es el reemplazo de terraform refresh (deprecado). Solo modifica el state para reflejar la realidad del proveedor. Útil para detectar drift. Se puede aplicar con terraform apply -refresh-only.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "drift"]
     },
     {
       "id": "state-007",
-      "question": "¿Qué hace `terraform import`?",
-      "answer": "Importa al state de Terraform un recurso que ya existe en el proveedor pero que no fue creado por Terraform, permitiendo que Terraform lo gestione.",
-      "explanation": "Útil para migrar infraestructura existente a Terraform. Requiere escribir primero el bloque resource en la configuración. Desde Terraform 1.5+ existe import block para importaciones declarativas.",
+      "question": "¿Por qué está deprecado `terraform refresh`?",
+      "answer": "Porque modifica el state sin calcular un plan completo ni pedir confirmación, lo que puede causar inconsistencias. Se reemplaza por `terraform plan -refresh-only` + `terraform apply -refresh-only`.",
+      "explanation": "El nuevo flujo es más seguro: primero ves qué cambiaría en el state (plan -refresh-only), luego decides si aplicar (apply -refresh-only). terraform refresh era un atajo sin revisión previa.",
       "difficulty": "intermediate",
-      "tags": ["state", "import"]
+      "tags": ["cert", "deprecated", "state"]
     },
     {
       "id": "state-008",
-      "question": "¿Qué son los workspaces de Terraform?",
-      "answer": "Entornos aislados dentro del mismo backend que mantienen states separados. Permiten gestionar múltiples entornos (dev, staging, prod) con la misma configuración.",
-      "explanation": "El workspace por defecto se llama 'default'. Se puede crear otro con terraform workspace new dev. Cada workspace tiene su propio state file. Son útiles pero tienen limitaciones para entornos complejos.",
+      "question": "¿Qué es drift en Terraform?",
+      "answer": "Divergencia entre el state de Terraform y el estado real de la infraestructura en el proveedor, causada por cambios realizados fuera de Terraform.",
+      "explanation": "Ejemplo: alguien escala una instancia en la consola de AWS. El state dice t3.micro pero la instancia es t3.large. Terraform detecta drift en el siguiente plan o apply -refresh-only. La solución es actualizar la configuración o restaurar el estado deseado.",
       "difficulty": "intermediate",
-      "tags": ["state", "workspaces"]
+      "tags": ["cert", "state", "drift"]
     },
     {
       "id": "state-009",
-      "question": "¿Qué hace `terraform refresh`?",
-      "answer": "Actualiza el state de Terraform consultando el estado real de la infraestructura en el proveedor, sin aplicar cambios.",
-      "explanation": "Reconcilia el state local con la realidad del proveedor. En versiones modernas, terraform plan ya incluye un refresh implícito. Se puede deshabilitar con -refresh=false.",
-      "difficulty": "intermediate",
-      "tags": ["state", "comandos"]
+      "question": "¿Qué hace `terraform state list`?",
+      "answer": "Lista todos los recursos rastreados en el state actual, con sus resource addresses completas (ej: `aws_instance.web`, `module.vpc.aws_vpc.main`).",
+      "explanation": "Es uno de los primeros comandos a usar cuando se quiere entender qué gestiona Terraform. Acepta filtros con patrones glob. Ej: `terraform state list module.vpc` lista solo recursos del módulo vpc.",
+      "difficulty": "basic",
+      "tags": ["cert", "state", "comandos"]
     },
     {
       "id": "state-010",
-      "question": "¿Qué hace `terraform state rm`?",
-      "answer": "Elimina un recurso del state de Terraform sin destruir el objeto real en el proveedor. Terraform deja de gestionar ese recurso.",
-      "explanation": "Útil cuando quieres que Terraform deje de gestionar un recurso sin eliminarlo. El recurso sigue existiendo en el proveedor pero Terraform ya no lo rastrea.",
+      "question": "¿Cuál es la diferencia entre `terraform state mv` (imperativo) y el bloque `moved {}` (declarativo)?",
+      "answer": "`terraform state mv` modifica el state directamente desde CLI, sin dejar rastro en el código. El bloque `moved {}` (Terraform 1.1+) se declara en HCL, queda en el repositorio y es reproducible y revisable.",
+      "explanation": "Cuándo usar cada uno: `moved {}` para refactoring de configuración (renombrar recursos, mover a módulos). `terraform state mv` para operaciones de emergencia o cuando no controlas la configuración. El bloque moved es preferible por trazabilidad.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "state-011",
+      "question": "¿Cuál es la diferencia entre `terraform state rm` (imperativo) y el bloque `removed {}` (declarativo)?",
+      "answer": "`terraform state rm` elimina el recurso del rastreo de Terraform desde CLI, sin trazabilidad. El bloque `removed {}` (Terraform 1.7+) se declara en HCL y documenta la intención de dejar de gestionar un recurso.",
+      "explanation": "El bloque removed también permite controlar si el recurso se destruye o simplemente se elimina del state: `removed { from = aws_instance.old lifecycle { destroy = false } }`. Con destroy = false, el recurso queda en el proveedor pero Terraform deja de rastrearlo.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "state-012",
+      "question": "¿Qué hace `terraform state show aws_instance.web`?",
+      "answer": "Muestra los valores de todos los atributos de un recurso específico tal como están almacenados en el state.",
+      "explanation": "Útil para inspeccionar el estado actual de un recurso sin hacer un plan completo. Muestra atributos que no están en la configuración HCL (como IDs generados por el proveedor, IPs asignadas, etc.).",
+      "difficulty": "basic",
+      "tags": ["cert", "state", "comandos"]
+    },
+    {
+      "id": "state-013",
+      "question": "¿Para qué sirve `terraform force-unlock`?",
+      "answer": "Libera forzadamente un lock de state que quedó bloqueado (por ejemplo, por un apply que se interrumpió sin liberar el lock).",
+      "explanation": "Uso: `terraform force-unlock LOCK_ID`. El LOCK_ID se obtiene del mensaje de error al intentar operar con el state bloqueado. Úsalo con precaución y solo cuando estés seguro de que no hay otra operación en progreso.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "locking"]
+    },
+    {
+      "id": "state-014",
+      "question": "¿Cuáles son los CLI workspaces de Terraform y para qué sirven?",
+      "answer": "Estados aislados dentro del mismo backend y configuración. Permiten gestionar múltiples entornos (dev, staging, prod) con la misma configuración HCL, cada uno con su propio state.",
+      "explanation": "IMPORTANTE: los CLI workspaces son DIFERENTES a los workspaces de HCP Terraform. CLI workspaces = múltiples states en un backend. Comandos: `terraform workspace new dev`, `terraform workspace select prod`, `terraform workspace list`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "workspaces"]
+    },
+    {
+      "id": "state-015",
+      "question": "¿Qué es el `terraform_remote_state` data source?",
+      "answer": "Data source que permite leer los outputs del state de otra configuración de Terraform, facilitando el intercambio de información entre proyectos o módulos independientes.",
+      "explanation": "Ejemplo: el proyecto VPC exporta su vpc_id como output. El proyecto App usa `data \"terraform_remote_state\" \"vpc\"` para leerlo. Es una forma de comunicación entre stacks de Terraform independientes.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "remote-state"]
+    },
+    {
+      "id": "state-016",
+      "question": "¿Qué es una 'partial backend configuration' y cuándo se usa?",
+      "answer": "Configuración de backend con algunos campos omitidos del HCL, que se pasan en tiempo de `terraform init` mediante -backend-config. Se usa para no hardcodear credenciales o configuraciones sensibles en el código.",
+      "explanation": "Ejemplo: el bloque backend solo tiene el bucket y la región. La access key y secret key se pasan como `terraform init -backend-config=backend.tfvars`. Permite el mismo código en múltiples entornos con distintos backends.",
       "difficulty": "advanced",
-      "tags": ["state", "comandos"]
+      "tags": ["cert", "prod", "state", "backend"]
+    },
+    {
+      "id": "state-017",
+      "question": "¿Qué hace `terraform state pull`?",
+      "answer": "Descarga el state actual desde el backend remoto y lo imprime en stdout en formato JSON.",
+      "explanation": "Útil para inspección o como parte de scripts de auditoría. El output es el contenido raw del state file. Se puede combinar con jq para extraer información específica: `terraform state pull | jq '.resources[].type'`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "comandos"]
+    },
+    {
+      "id": "state-018",
+      "question": "¿Qué hace `terraform state push`?",
+      "answer": "Sube un state file local al backend remoto, sobrescribiendo el state actual. Operación de alto riesgo.",
+      "explanation": "Usar con extremo cuidado. Puede sobrescribir trabajo reciente si hay conflictos. Útil en recuperación de desastres cuando el state remoto está corrupto o se perdió. Siempre hacer backup del state antes.",
+      "difficulty": "advanced",
+      "tags": ["prod", "state", "comandos"]
+    },
+    {
+      "id": "state-019",
+      "question": "Al renombrar un recurso en la configuración HCL de `aws_instance.old` a `aws_instance.new`, ¿qué hará Terraform sin intervención adicional?",
+      "answer": "Destruirá `aws_instance.old` y creará `aws_instance.new` como si fueran recursos distintos, causando recreación innecesaria del recurso.",
+      "explanation": "Terraform no detecta renombramientos automáticamente. Para evitar la recreación, usar el bloque declarativo `moved { from = aws_instance.old to = aws_instance.new }` (Terraform 1.1+) o el imperativo `terraform state mv`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "state-020",
+      "question": "¿Qué contiene físicamente el archivo `terraform.tfstate`?",
+      "answer": "Un objeto JSON con: versión del formato de state, lineage (ID único del state), serial (contador de modificaciones), y una lista de recursos con todos sus atributos actuales.",
+      "explanation": "El serial se incrementa con cada modificación. El lineage identifica unívocamente este state. Si Terraform detecta que el lineage no coincide al hacer push, rechaza la operación para evitar sobrescribir el state de otro proyecto.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "fundamentos"]
+    },
+    {
+      "id": "state-021",
+      "question": "¿Qué significa el atributo `serial` en el state de Terraform?",
+      "answer": "Un número entero que se incrementa con cada operación que modifica el state. Permite detectar si alguien modificó el state entre dos operaciones.",
+      "explanation": "Si el serial del state remoto es mayor que el local, Terraform rechaza la operación y pide que se actualice el state local primero. Protege contra sobreescrituras accidentales en entornos de equipo.",
+      "difficulty": "advanced",
+      "tags": ["prod", "state", "fundamentos"]
+    },
+    {
+      "id": "state-022",
+      "question": "¿Cuándo usarías el bloque `moved {}` en lugar de `terraform state mv`?",
+      "answer": "Cuando renombras un recurso o lo mueves dentro/fuera de un módulo y quieres que el cambio sea revisable en un PR, reproducible y documentado en el código.",
+      "explanation": "El bloque moved queda en el repositorio y puede ser revisado antes de aplicar. terraform state mv es imperativo y no deja rastro en el código. Para refactoring planificado, moved es siempre preferible.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "state-023",
+      "question": "¿Qué hace el bloque `removed { lifecycle { destroy = false } }`?",
+      "answer": "Elimina el recurso del rastreo del state de Terraform, pero lo preserva en el proveedor. Terraform deja de gestionarlo sin destruirlo.",
+      "explanation": "Con destroy = true (defecto), Terraform destruye el recurso Y lo elimina del state. Con destroy = false, solo lo elimina del state. Útil cuando quieres 'adoptar' el recurso con otra herramienta o quitarlo del scope sin destruirlo.",
+      "difficulty": "advanced",
+      "tags": ["cert", "state", "refactoring"]
+    },
+    {
+      "id": "state-024",
+      "question": "¿Cómo funciona el state locking con `use_lockfile = true` en el backend S3?",
+      "answer": "Terraform crea un objeto en el mismo bucket S3 con el sufijo `.tflock` al iniciar una operación (apply, plan). Si el archivo existe, otra operación está en curso y Terraform espera o falla. Al terminar, elimina el archivo de lock.",
+      "explanation": "Ejemplo: el state está en `s3://mi-bucket/prod/terraform.tfstate`. El lock se crea en `s3://mi-bucket/prod/terraform.tfstate.tflock`. Este mecanismo no requiere ningún servicio adicional como DynamoDB.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "locking"]
+    },
+    {
+      "id": "state-025",
+      "question": "¿Cuál es la limitación principal de los CLI workspaces para gestionar entornos como dev/staging/prod?",
+      "answer": "Todos los workspaces comparten la misma configuración HCL y el mismo backend, lo que puede complicar diferencias significativas entre entornos (distintos tamaños de instancia, distintos recursos, etc.).",
+      "explanation": "Para diferencias menores entre entornos, los workspaces funcionan bien. Para diferencias grandes, es mejor usar directorios separados o módulos con variables distintas. Los workspaces no son la herramienta correcta para todo.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "state", "workspaces"]
+    },
+    {
+      "id": "state-026",
+      "question": "¿Cuál es la diferencia entre el workspace `default` y un workspace personalizado?",
+      "answer": "El workspace `default` es el que existe por defecto y su state se almacena normalmente. Los workspaces personalizados almacenan su state en un subdirectorio `env:/nombre/` dentro del backend.",
+      "explanation": "Con el backend S3: el state del workspace default está en `s3://bucket/key`. El state del workspace dev está en `s3://bucket/env:/dev/key`. Esto permite usar el mismo backend para múltiples entornos.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "workspaces"]
+    },
+    {
+      "id": "state-027",
+      "question": "¿Qué es la clave `lineage` en el state de Terraform?",
+      "answer": "Un UUID generado al crear el state por primera vez que identifica de forma única este proyecto/state. Terraform lo usa para detectar si un state de un proyecto diferente está siendo aplicado sobre otro.",
+      "explanation": "Si intentas hacer push de un state con lineage diferente al del backend, Terraform rechaza la operación. Protege contra el error de aplicar el state del proyecto A sobre el proyecto B accidentalmente.",
+      "difficulty": "advanced",
+      "tags": ["prod", "state", "fundamentos"]
+    },
+    {
+      "id": "state-028",
+      "question": "¿Qué ventaja tiene `terraform apply -refresh-only` sobre el deprecado `terraform refresh`?",
+      "answer": "Muestra primero un plan de los cambios que se harían en el state (sin aplicar), permite revisar antes de confirmar, y es coherente con el flujo plan/apply estándar.",
+      "explanation": "`terraform refresh` modificaba el state directamente sin posibilidad de revisión previa. `terraform plan -refresh-only` + `terraform apply -refresh-only` sigue el mismo patrón seguro que cualquier otro cambio de infraestructura.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "drift"]
+    },
+    {
+      "id": "state-029",
+      "question": "¿Cuándo es necesario re-ejecutar `terraform init` después de cambiar la configuración del backend?",
+      "answer": "Siempre. Cualquier cambio en el bloque `backend {}` dentro de `terraform {}` requiere ejecutar `terraform init` para aplicar la nueva configuración de backend.",
+      "explanation": "Al hacer init con un backend diferente, Terraform ofrece migrar el state al nuevo backend. Si ya tienes state en un backend, esta migración mueve el state automáticamente si confirmas.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "backend", "init"]
+    },
+    {
+      "id": "state-030",
+      "question": "¿Qué almacena el state sobre un recurso, más allá de sus atributos de configuración?",
+      "answer": "Los IDs asignados por el proveedor, atributos calculados (IPs, ARNs), metadatos internos de Terraform (versión del proveedor, tipo de recurso, dependencias) y atributos sensibles marcados como tal.",
+      "explanation": "Los atributos calculados son los que el proveedor asigna al crear el recurso y que no se pueden conocer de antemano (ID de instancia, IP pública asignada dinámicamente, etc.). El state es la única fuente de estos valores.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "state", "fundamentos"]
     }
   ],
   "quiz": {
-    "passingScore": 80,
+    "passingScore": 85,
     "questions": [
       {
         "id": "state-q001",
@@ -104,39 +264,39 @@
           { "id": "a", "text": "terraform.state" },
           { "id": "b", "text": "terraform.tfstate" },
           { "id": "c", "text": ".terraform/state.json" },
-          { "id": "d", "text": "state.tf" }
+          { "id": "d", "text": "state.tf.json" }
         ],
         "correctAnswers": ["b"],
-        "explanation": "Terraform crea terraform.tfstate en el directorio de trabajo. También existe terraform.tfstate.backup como respaldo del estado anterior.",
-        "tags": ["state"]
+        "explanation": "Terraform crea terraform.tfstate en el directorio de trabajo. También existe terraform.tfstate.backup como respaldo del estado anterior. Este archivo no debe commitearse al VCS.",
+        "tags": ["cert", "state"]
       },
       {
         "id": "state-q002",
         "type": "multiple-choice",
         "question": "¿Por qué razones NO se recomienda usar state local en equipos? (selecciona todas las correctas)",
         "options": [
-          { "id": "a", "text": "Puede contener datos sensibles que se commitearían al repo" },
-          { "id": "b", "text": "No soporta el lenguaje HCL" },
-          { "id": "c", "text": "Dos usuarios pueden modificar el state simultáneamente causando corrupción" },
-          { "id": "d", "text": "No hay mecanismo de locking para evitar operaciones concurrentes" }
+          { "id": "a", "text": "Puede contener datos sensibles que podrían commitearse al repositorio" },
+          { "id": "b", "text": "Terraform no puede leer state local con versiones >= 1.0" },
+          { "id": "c", "text": "Sin locking, dos usuarios pueden modificar el state simultáneamente causando corrupción" },
+          { "id": "d", "text": "El state local no se puede compartir entre miembros del equipo fácilmente" }
         ],
         "correctAnswers": ["a", "c", "d"],
-        "explanation": "El state local tiene tres problemas principales en equipos: datos sensibles en el repo, sin locking (operaciones concurrentes corrompen el state) y sin compartición. HCL no está relacionado con el state.",
-        "tags": ["state", "equipo"]
+        "explanation": "El state local tiene tres problemas en equipos: datos sensibles en el repo, sin locking (riesgo de corrupción por acceso concurrente) y difícil de compartir. La opción B es falsa: el state local funciona perfectamente en 1.x.",
+        "tags": ["cert", "state", "equipo"]
       },
       {
         "id": "state-q003",
         "type": "single-choice",
-        "question": "¿Qué servicio de AWS se usa comúnmente para implementar state locking cuando el backend es S3?",
+        "question": "En Terraform >= 1.10, ¿cómo se configura el state locking nativo en el backend S3?",
         "options": [
-          { "id": "a", "text": "SQS" },
-          { "id": "b", "text": "ElastiCache" },
-          { "id": "c", "text": "DynamoDB" },
-          { "id": "d", "text": "RDS" }
+          { "id": "a", "text": "Creando una tabla DynamoDB y referenciándola con `dynamodb_table`" },
+          { "id": "b", "text": "Usando `use_lockfile = true` en el bloque del backend S3" },
+          { "id": "c", "text": "El backend S3 no soporta state locking" },
+          { "id": "d", "text": "Configurando `lock_bucket = true` en el bloque del backend" }
         ],
-        "correctAnswers": ["c"],
-        "explanation": "El backend S3 de Terraform usa DynamoDB para implementar locking. Se crea una tabla DynamoDB con una clave de partición llamada 'LockID'.",
-        "tags": ["state", "locking", "aws"]
+        "correctAnswers": ["b"],
+        "explanation": "Desde Terraform 1.10, use_lockfile = true habilita el locking nativo en S3 creando un objeto .tflock en el mismo bucket. El mecanismo con DynamoDB está deprecado. Las nuevas configuraciones deben usar use_lockfile.",
+        "tags": ["cert", "state", "locking"]
       },
       {
         "id": "state-q004",
@@ -149,39 +309,39 @@
           { "id": "d", "text": "terraform resources" }
         ],
         "correctAnswers": ["b"],
-        "explanation": "terraform state list muestra todos los recursos en el state actual con su dirección completa.",
-        "tags": ["state", "comandos"]
+        "explanation": "terraform state list muestra todos los recursos en el state con su dirección completa. terraform show muestra el contenido completo del state (más información, más verbose).",
+        "tags": ["cert", "state", "comandos"]
       },
       {
         "id": "state-q005",
         "type": "true-false",
-        "question": "Al renombrar un recurso en la configuración .tf, Terraform destruirá el recurso antiguo y creará uno nuevo a menos que uses `terraform state mv`.",
+        "question": "El comando `terraform refresh` es la forma recomendada en versiones modernas de Terraform para sincronizar el state con la infraestructura real.",
         "options": [
           { "id": "true", "text": "Verdadero" },
           { "id": "false", "text": "Falso" }
         ],
-        "correctAnswers": ["true"],
-        "explanation": "Terraform no detecta renombramientos automáticamente. Si renombras aws_instance.old a aws_instance.new, plan mostrará -aws_instance.old y +aws_instance.new. Usa terraform state mv para evitarlo.",
-        "tags": ["state", "refactoring"]
+        "correctAnswers": ["false"],
+        "explanation": "terraform refresh está deprecado. La forma recomendada es: terraform plan -refresh-only (para ver qué cambiaría en el state) + terraform apply -refresh-only (para aplicar los cambios al state). Este flujo es más seguro.",
+        "tags": ["cert", "deprecated", "state", "drift"]
       },
       {
         "id": "state-q006",
         "type": "single-choice",
         "question": "¿Qué hace `terraform state rm aws_instance.web`?",
         "options": [
-          { "id": "a", "text": "Destruye la instancia EC2 en AWS" },
-          { "id": "b", "text": "Elimina el recurso del state pero la instancia sigue existiendo en AWS" },
+          { "id": "a", "text": "Destruye la instancia EC2 en el proveedor" },
+          { "id": "b", "text": "Elimina el recurso del state pero la instancia continúa existiendo en el proveedor" },
           { "id": "c", "text": "Mueve el recurso a otro workspace" },
-          { "id": "d", "text": "Elimina el archivo terraform.tfstate" }
+          { "id": "d", "text": "Suspende la gestión del recurso hasta el próximo apply" }
         ],
         "correctAnswers": ["b"],
-        "explanation": "terraform state rm elimina el recurso del rastreo de Terraform, pero el recurso real (la instancia EC2) sigue existiendo en AWS. Terraform simplemente deja de gestionarlo.",
-        "tags": ["state", "comandos"]
+        "explanation": "terraform state rm elimina el recurso del rastreo de Terraform (del state), pero el recurso real sigue existiendo en el proveedor. Terraform simplemente deja de gestionarlo. Para eliminar Y borrar del state, usar destroy.",
+        "tags": ["cert", "state", "comandos"]
       },
       {
         "id": "state-q007",
         "type": "single-choice",
-        "question": "¿Cuál es el workspace de Terraform que existe por defecto?",
+        "question": "¿Cuál es el workspace de Terraform CLI que existe por defecto?",
         "options": [
           { "id": "a", "text": "main" },
           { "id": "b", "text": "production" },
@@ -189,8 +349,185 @@
           { "id": "d", "text": "global" }
         ],
         "correctAnswers": ["c"],
-        "explanation": "El workspace que crea Terraform por defecto se llama 'default'. Puedes crear nuevos con terraform workspace new <nombre>.",
-        "tags": ["state", "workspaces"]
+        "explanation": "El workspace CLI que existe por defecto se llama 'default'. Puedes crear nuevos con terraform workspace new <nombre> y cambiar entre ellos con terraform workspace select <nombre>.",
+        "tags": ["cert", "state", "workspaces"]
+      },
+      {
+        "id": "state-q008",
+        "type": "single-choice",
+        "question": "Un ingeniero renombra `aws_instance.app` a `aws_instance.web` en la configuración HCL. Al ejecutar terraform plan, ve que planea destruir y recrear la instancia. ¿Cuál es la mejor solución para evitar esto?",
+        "options": [
+          { "id": "a", "text": "Ejecutar `terraform apply -replace aws_instance.app`" },
+          { "id": "b", "text": "Agregar un bloque `moved { from = aws_instance.app to = aws_instance.web }` en la configuración" },
+          { "id": "c", "text": "Importar el recurso con `terraform import aws_instance.web <ID>`" },
+          { "id": "d", "text": "Editar manualmente el terraform.tfstate para cambiar el nombre" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El bloque moved {} (Terraform 1.1+) indica a Terraform que el recurso fue renombrado, actualizando el state sin destruir/recrear el recurso. Es declarativo, revisable en un PR y la solución preferida.",
+        "tags": ["cert", "state", "refactoring"]
+      },
+      {
+        "id": "state-q009",
+        "type": "true-false",
+        "question": "El uso de DynamoDB para state locking en el backend S3 fue eliminado completamente en Terraform 1.10 y ya no funciona.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "DynamoDB para locking está DEPRECADO, no eliminado. Sigue funcionando para permitir migración desde configuraciones existentes hacia use_lockfile = true. Las nuevas configuraciones no deben usarlo, pero las existentes pueden seguir usándolo durante la transición.",
+        "tags": ["cert", "deprecated", "state", "locking"]
+      },
+      {
+        "id": "state-q010",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia entre el bloque `moved {}` y el comando `terraform state mv`?",
+        "options": [
+          { "id": "a", "text": "moved {} solo funciona dentro de módulos; state mv funciona en el módulo raíz" },
+          { "id": "b", "text": "moved {} es declarativo y queda en el código; state mv es imperativo y no deja trazabilidad en HCL" },
+          { "id": "c", "text": "No hay diferencia funcional, solo de sintaxis" },
+          { "id": "d", "text": "state mv es más seguro porque muestra un plan antes de ejecutar" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "moved {} se declara en HCL, es revisable en pull requests, reproducible y queda documentado en el historial de git. terraform state mv es un comando imperativo que modifica el state directamente sin rastro en el código.",
+        "tags": ["cert", "state", "refactoring"]
+      },
+      {
+        "id": "state-q011",
+        "type": "single-choice",
+        "question": "What is the suffix used by the `.tflock` file created by `use_lockfile = true` in the S3 backend?",
+        "options": [
+          { "id": "a", "text": ".lock" },
+          { "id": "b", "text": ".terraform.lock" },
+          { "id": "c", "text": ".tflock" },
+          { "id": "d", "text": ".state.lock" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "With `use_lockfile = true`, Terraform creates a lock object using the `.tflock` suffix. For example, if the state key is `prod/terraform.tfstate`, the lock file is `prod/terraform.tfstate.tflock` in the same S3 bucket.",
+        "tags": ["cert", "state", "locking"]
+      },
+      {
+        "id": "state-q012",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes son ventajas del bloque `removed {}` sobre `terraform state rm`? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Se puede revisar en un pull request antes de aplicar" },
+          { "id": "b", "text": "Permite especificar si el recurso se destruye o solo se elimina del state" },
+          { "id": "c", "text": "Queda documentado en el historial de git del repositorio" },
+          { "id": "d", "text": "Es más rápido que terraform state rm" }
+        ],
+        "correctAnswers": ["a", "b", "c"],
+        "explanation": "El bloque removed {} es declarativo (revisable en PR, histórico en git) y permite `lifecycle { destroy = false }` para preservar el recurso en el proveedor. terraform state rm no tiene estas ventajas. La velocidad de ejecución es irrelevante.",
+        "tags": ["cert", "state", "refactoring"]
+      },
+      {
+        "id": "state-q013",
+        "type": "single-choice",
+        "question": "Un equipo detecta que un recurso fue modificado manualmente en la consola de AWS (drift). ¿Cuál es el flujo correcto con Terraform moderno para reconciliar el state?",
+        "options": [
+          { "id": "a", "text": "Ejecutar `terraform refresh` para actualizar el state automáticamente" },
+          { "id": "b", "text": "Ejecutar `terraform plan -refresh-only`, revisar los cambios propuestos al state, y luego `terraform apply -refresh-only`" },
+          { "id": "c", "text": "Editar manualmente el terraform.tfstate para reflejar los cambios" },
+          { "id": "d", "text": "Ejecutar `terraform apply` que detectará y corregirá el drift automáticamente" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El flujo moderno para reconciliar drift es: plan -refresh-only (para ver qué cambiaría en el state) → revisar → apply -refresh-only (para actualizar el state reflejando la realidad). terraform refresh está deprecado y editar el state manualmente es peligroso.",
+        "tags": ["cert", "state", "drift"]
+      },
+      {
+        "id": "state-q014",
+        "type": "true-false",
+        "question": "Los CLI workspaces de Terraform y los workspaces de HCP Terraform son equivalentes: ambos son unidades de infraestructura con state, variables y ejecuciones propias.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "CLI workspaces = múltiples states para la misma configuración/backend (comparten código y backend). HCP Terraform workspaces = unidades de infraestructura completas con state, variables, ejecuciones, VCS y permisos propios. Son conceptos distintos.",
+        "tags": ["cert", "state", "workspaces"]
+      },
+      {
+        "id": "state-q015",
+        "type": "single-choice",
+        "question": "¿Cuándo debería un equipo considerar migrar de DynamoDB locking a `use_lockfile = true` en el backend S3?",
+        "options": [
+          { "id": "a", "text": "Es urgente: DynamoDB locking fue eliminado en Terraform 1.10" },
+          { "id": "b", "text": "Al planificar actualizaciones o nuevas configuraciones, ya que DynamoDB está deprecado pero sigue funcionando" },
+          { "id": "c", "text": "Solo si tienen problemas de rendimiento con DynamoDB" },
+          { "id": "d", "text": "No es necesario migrar: ambos mecanismos están igual de soportados" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "DynamoDB locking está deprecado pero no eliminado. El equipo puede planificar la migración a use_lockfile = true cuando haga actualizaciones o nuevas configuraciones. No es urgente pero es la dirección correcta. No ambos están igual de soportados: DynamoDB está en proceso de abandono.",
+        "tags": ["cert", "deprecated", "state", "locking"]
+      },
+      {
+        "id": "state-q016",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes comandos son parte de `terraform state`? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "terraform state list" },
+          { "id": "b", "text": "terraform state show" },
+          { "id": "c", "text": "terraform state apply" },
+          { "id": "d", "text": "terraform state mv" },
+          { "id": "e", "text": "terraform state pull" }
+        ],
+        "correctAnswers": ["a", "b", "d", "e"],
+        "explanation": "Los subcomandos de terraform state son: list, show, mv, rm, pull, push. No existe 'terraform state apply' — apply es un comando top-level.",
+        "tags": ["cert", "state", "comandos"]
+      },
+      {
+        "id": "state-q017",
+        "type": "single-choice",
+        "question": "What does `terraform state pull | jq '.serial'` output?",
+        "options": [
+          { "id": "a", "text": "The Terraform version used to create the state" },
+          { "id": "b", "text": "A counter that increments with each state modification" },
+          { "id": "c", "text": "The number of resources in the state" },
+          { "id": "d", "text": "The unique ID of the state file on the remote backend" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "The `serial` field is a monotonically increasing counter incremented with every state modification. Terraform uses it to detect concurrent modifications and prevent overwriting newer state with older versions.",
+        "tags": ["prod", "state", "fundamentos"]
+      },
+      {
+        "id": "state-q018",
+        "type": "single-choice",
+        "question": "¿Qué ocurre cuando se ejecuta `terraform init` y la configuración del backend ha cambiado respecto al init anterior?",
+        "options": [
+          { "id": "a", "text": "Terraform falla con error y requiere borrar .terraform/ antes de continuar" },
+          { "id": "b", "text": "Terraform detecta el cambio y ofrece migrar el state al nuevo backend" },
+          { "id": "c", "text": "Terraform ignora el cambio y usa el backend anterior" },
+          { "id": "d", "text": "Terraform crea un nuevo state vacío en el nuevo backend automáticamente" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Al detectar un cambio de backend, terraform init ofrece migrar el state existente al nuevo backend. Si confirmas, el state se copia al nuevo backend. Si rechazas, mantiene el backend anterior.",
+        "tags": ["cert", "state", "backend", "init"]
+      },
+      {
+        "id": "state-q019",
+        "type": "true-false",
+        "question": "El bloque `removed { lifecycle { destroy = false } }` destruye el recurso en el proveedor pero lo mantiene en el state de Terraform.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "Es lo contrario: removed con destroy = false elimina el recurso del STATE de Terraform pero lo preserva en el PROVEEDOR. El recurso sigue existiendo en AWS/GCP/etc., pero Terraform deja de rastrearlo.",
+        "tags": ["cert", "state", "refactoring"]
+      },
+      {
+        "id": "state-q020",
+        "type": "single-choice",
+        "question": "¿Por qué es recomendable usar un backend remoto con locking en lugar del state local, incluso en proyectos de una sola persona?",
+        "options": [
+          { "id": "a", "text": "El state local es más lento que el remoto" },
+          { "id": "b", "text": "El state local no soporta módulos de Terraform" },
+          { "id": "c", "text": "Protege contra pérdida accidental del state, facilita recuperación ante desastres y permite auditoría de cambios" },
+          { "id": "d", "text": "El state local tiene un límite de 10 recursos" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Incluso individualmente, el backend remoto (como S3 con versionado habilitado) protege contra pérdida del state, permite recuperar versiones anteriores y puede tener políticas de acceso. El state local puede perderse con el disco o accidentalmente.",
+        "tags": ["cert", "prod", "state", "backend"]
       }
     ]
   }

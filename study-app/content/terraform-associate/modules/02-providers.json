@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0",
-  "contentVersion": "1.0.0",
+  "contentVersion": "2.0.0",
   "type": "study-module",
   "certificationId": "terraform-associate",
   "language": "es-MX",
@@ -8,91 +8,251 @@
     "id": "providers",
     "order": 2,
     "name": "Providers y Registry",
-    "description": "Providers, Terraform Registry, versiones y configuración de providers",
-    "estimatedMinutes": 40
+    "description": "Providers, Terraform Registry, version constraints, lock file, aliases y la deprecación de version en bloque provider",
+    "estimatedMinutes": 50
   },
   "flashcards": [
     {
       "id": "providers-001",
       "question": "¿Qué es un Provider en Terraform?",
-      "answer": "Un plugin que permite a Terraform interactuar con APIs de plataformas externas (AWS, Azure, GCP, GitHub, etc.). Traduce las declaraciones HCL en llamadas a la API del proveedor.",
-      "explanation": "Los providers son el puente entre Terraform y los servicios externos. Cada provider expone resources y data sources específicos. Ej: el provider AWS expone aws_instance, aws_s3_bucket, etc.",
+      "answer": "Un plugin que permite a Terraform interactuar con APIs externas (AWS, Azure, GCP, GitHub, etc.). Traduce los bloques HCL en llamadas a la API del proveedor.",
+      "explanation": "Los providers son el puente entre Terraform y los servicios. Cada provider expone resources y data sources. Ej: el provider AWS expone aws_instance, aws_s3_bucket, etc. Sin el provider, Terraform no sabe cómo crear esos recursos.",
       "difficulty": "basic",
-      "tags": ["providers", "fundamentos"]
+      "tags": ["cert", "providers", "fundamentos"]
     },
     {
       "id": "providers-002",
-      "question": "¿Qué es el Terraform Registry?",
+      "question": "¿Qué es el Terraform Registry y cuál es su URL?",
       "answer": "registry.terraform.io — repositorio público oficial donde se publican y distribuyen providers y módulos de Terraform.",
-      "explanation": "Es el lugar por defecto donde Terraform busca providers. Contiene providers oficiales de HashiCorp (AWS, Azure, GCP), providers verificados de socios y providers de la comunidad.",
+      "explanation": "Es el lugar por defecto donde Terraform busca providers durante `terraform init`. Contiene providers Official (HashiCorp), Partner (empresa verificada) y Community (contribuidores externos).",
       "difficulty": "basic",
-      "tags": ["registry", "providers"]
+      "tags": ["cert", "registry", "providers"]
     },
     {
       "id": "providers-003",
-      "question": "¿Cómo se configura un provider en Terraform?",
-      "answer": "Con un bloque `provider` en la configuración. Ej: `provider \"aws\" { region = \"us-east-1\" }`",
-      "explanation": "El bloque provider especifica el nombre del provider y sus argumentos de configuración. Puede haber múltiples instancias del mismo provider usando alias.",
+      "question": "¿Dónde se deben declarar los providers requeridos y sus versiones?",
+      "answer": "En el bloque `terraform { required_providers { ... } }`, especificando `source` y `version` para cada provider.",
+      "explanation": "Ejemplo: `terraform { required_providers { aws = { source = \"hashicorp/aws\", version = \"~> 5.0\" } } }`. Esta es la forma correcta y recomendada. Garantiza reproducibilidad del entorno.",
       "difficulty": "basic",
-      "tags": ["providers", "configuracion"]
+      "tags": ["cert", "providers", "versiones"]
     },
     {
       "id": "providers-004",
-      "question": "¿Dónde se declaran los providers requeridos en Terraform?",
-      "answer": "En el bloque `terraform { required_providers { ... } }`. Esto especifica el source y la versión requerida de cada provider.",
-      "explanation": "Ejemplo: terraform { required_providers { aws = { source = \"hashicorp/aws\", version = \"~> 5.0\" } } }. Esto asegura reproducibilidad del entorno.",
+      "question": "¿Por qué está deprecado declarar `version` dentro del bloque `provider {}`?",
+      "answer": "Declarar `version` en el bloque `provider {}` está deprecado porque mezcla configuración de conexión (credenciales, región) con gestión de versiones. Las versiones deben ir en `required_providers`.",
+      "explanation": "La forma deprecada: `provider \"aws\" { version = \"~> 5.0\" }`. La correcta: `terraform { required_providers { aws = { source = \"hashicorp/aws\", version = \"~> 5.0\" } } }`. La forma deprecada aún funciona pero genera advertencias y no se recomienda.",
       "difficulty": "intermediate",
-      "tags": ["providers", "versiones"]
+      "tags": ["cert", "deprecated", "providers", "versiones"]
     },
     {
       "id": "providers-005",
       "question": "¿Qué significa el constraint de versión `~> 5.0` en un provider?",
-      "answer": "Acepta cualquier versión >= 5.0 y < 6.0. Permite actualizaciones de parche y minor pero no cambios de major version.",
-      "explanation": "Los constraints de versión siguen semver: ~> 5.0 = >=5.0, <6.0. ~> 5.1 = >=5.1, <6.0. >= 5.0 = cualquier versión mayor o igual. = 5.2.1 = exactamente esa versión.",
+      "answer": "Acepta versiones >= 5.0 y < 6.0. El major version no puede cambiar, pero sí el minor y patch.",
+      "explanation": "Regla nemotécnica: ~> permite el último componente especificado moverse. `~> 5.0` = >=5.0, <6.0. `~> 5.1` = >=5.1, <6.0. `~> 5.1.2` = >=5.1.2, <5.2.0. Para fijar exactamente: `= 5.2.1`.",
       "difficulty": "intermediate",
-      "tags": ["providers", "versiones", "semver"]
+      "tags": ["cert", "providers", "versiones", "semver"]
     },
     {
       "id": "providers-006",
-      "question": "¿Qué es el archivo `.terraform.lock.hcl`?",
-      "answer": "Archivo de lock que registra las versiones exactas de los providers seleccionados. Garantiza que todos los miembros del equipo usen las mismas versiones.",
-      "explanation": "Se crea automáticamente con terraform init. Debe commitearse al control de versiones para garantizar reproducibilidad. Para actualizarlo: terraform init -upgrade.",
+      "question": "¿Qué es el archivo `.terraform.lock.hcl` y por qué debe commitearse al VCS?",
+      "answer": "Archivo de lock que registra las versiones exactas y hashes de los providers seleccionados. Garantiza que todos en el equipo usen las mismas versiones aunque los constraints permitan un rango.",
+      "explanation": "Se crea/actualiza automáticamente con `terraform init`. Debe commitearse al control de versiones. Para actualizar providers dentro de los constraints: `terraform init -upgrade`. Sin este archivo, distintas máquinas pueden instalar diferentes versiones del mismo provider.",
       "difficulty": "intermediate",
-      "tags": ["providers", "lock", "versiones"]
+      "tags": ["cert", "providers", "lock", "versiones"]
     },
     {
       "id": "providers-007",
-      "question": "¿Qué son los providers 'tier' en el Terraform Registry?",
-      "answer": "Niveles de soporte: Official (HashiCorp), Partner (empresa verificada), Community (contribuidores externos).",
-      "explanation": "Official: mantenidos por HashiCorp (aws, azure, google). Partner: mantenidos por empresas con acuerdo con HashiCorp (datadog, newrelic). Community: mantenidos por la comunidad.",
+      "question": "¿Para qué sirve el atributo `alias` en un bloque `provider`?",
+      "answer": "Permite definir múltiples configuraciones del mismo provider, cada una con un alias. Se usa en recursos con `provider = aws.nombre_alias`. Útil para multi-región o multi-cuenta.",
+      "explanation": "Ejemplo: `provider \"aws\" { alias = \"us_east\" region = \"us-east-1\" }` y `provider \"aws\" { alias = \"eu_west\" region = \"eu-west-1\" }`. En el recurso: `resource \"aws_s3_bucket\" \"b\" { provider = aws.eu_west }`.",
       "difficulty": "intermediate",
-      "tags": ["providers", "registry", "tiers"]
+      "tags": ["cert", "providers", "alias", "multi-region"]
     },
     {
       "id": "providers-008",
-      "question": "¿Para qué sirve el atributo `alias` en un bloque provider?",
-      "answer": "Permite definir múltiples configuraciones del mismo provider. Útil para desplegar en múltiples regiones o cuentas con un mismo provider.",
-      "explanation": "Ejemplo: provider \"aws\" { alias = \"us_east\", region = \"us-east-1\" } y provider \"aws\" { alias = \"eu_west\", region = \"eu-west-1\" }. En los resources se referencia con provider = aws.us_east.",
+      "question": "¿Cuáles son los tres tiers de providers en el Terraform Registry?",
+      "answer": "Official (mantenidos por HashiCorp), Partner (mantenidos por empresas con acuerdo con HashiCorp, verificadas) y Community (mantenidos por la comunidad).",
+      "explanation": "Official: aws, azurerm, google, kubernetes. Partner: datadog, newrelic, cloudflare. Community: cualquier contribuidor. La distinción importa para decidir el nivel de confianza y soporte esperado.",
+      "difficulty": "basic",
+      "tags": ["cert", "registry", "tiers"]
+    },
+    {
+      "id": "providers-009",
+      "question": "¿Cuándo usarías `terraform init -upgrade`?",
+      "answer": "Cuando quieres actualizar los providers a versiones más nuevas dentro de los constraints definidos en `required_providers`, actualizando el `.terraform.lock.hcl`.",
+      "explanation": "Sin -upgrade, init respeta el lock file y no cambia versiones. Con -upgrade, recalcula las versiones permitidas por los constraints y actualiza el lock. Útil al querer adoptar una nueva versión del provider sin cambiar los constraints.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "comandos"]
+    },
+    {
+      "id": "providers-010",
+      "question": "¿Qué es un provider implícito en Terraform?",
+      "answer": "Cuando un resource o data source usa un tipo de provider no declarado explícitamente en `required_providers`, Terraform lo infiere del prefijo del tipo de recurso y lo descarga desde el Registry.",
+      "explanation": "Ejemplo: si usas `resource \"aws_instance\"` sin declarar el provider aws en required_providers, Terraform asume `hashicorp/aws` como source. Es funcional pero no recomendado: usar required_providers explícito garantiza versiones controladas.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers"]
+    },
+    {
+      "id": "providers-011",
+      "question": "¿Qué hace el comando `terraform providers`?",
+      "answer": "Muestra un árbol de los providers requeridos por la configuración actual, sus versiones y de qué módulo provienen.",
+      "explanation": "Útil para auditar qué providers usa la configuración. `terraform providers lock` genera el .terraform.lock.hcl sin descargar los providers.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "comandos"]
+    },
+    {
+      "id": "providers-012",
+      "question": "Si una configuración requiere el provider `hashicorp/aws` versión `~> 5.0`, ¿qué versiones son aceptadas?",
+      "answer": "Cualquier versión >= 5.0.0 y < 6.0.0. Por ejemplo: 5.0.0, 5.1.3, 5.99.0. No acepta: 4.x ni 6.x.",
+      "explanation": "~> 5.0 es equivalente a >= 5.0, < 6.0. El major version (5) es el techo. Esta es la restricción más común: permite actualizaciones de minor/patch pero protege contra cambios breaking del major.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "versiones", "semver"]
+    },
+    {
+      "id": "providers-013",
+      "question": "¿Cuál es la diferencia entre `version = \"~> 4.2\"` y `version = \"~> 4\"`?",
+      "answer": "`~> 4.2` permite >= 4.2, < 5.0 (el minor puede crecer). `~> 4` permite >= 4.0, < 5.0 (equivalente a `~> 4.0`).",
+      "explanation": "~> se aplica al último componente especificado. `~> 4.2`: el patch puede variar, el minor puede crecer hasta 4.x. `~> 4`: desde 4.0 hasta antes de 5.0. Ambos protegen el major version.",
       "difficulty": "advanced",
-      "tags": ["providers", "alias", "multi-region"]
+      "tags": ["cert", "providers", "versiones", "semver"]
+    },
+    {
+      "id": "providers-014",
+      "question": "¿Qué pasa con el `.terraform.lock.hcl` si dos desarrolladores del equipo ejecutan `terraform init` en momentos distintos sin el flag -upgrade?",
+      "answer": "Ambos obtendrán las mismas versiones de providers, porque init respeta el lock file existente y no descarga versiones diferentes.",
+      "explanation": "Este es exactamente el propósito del lock file: garantizar consistencia. Si el lock file está en el VCS, cualquier desarrollador que haga `git pull && terraform init` obtendrá los mismos providers que todos los demás.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "lock", "equipo"]
+    },
+    {
+      "id": "providers-015",
+      "question": "¿Cómo se referencia un provider con alias en un recurso?",
+      "answer": "Con el meta-argument `provider` en el bloque del recurso: `provider = nombre_provider.nombre_alias`.",
+      "explanation": "Ejemplo: si tienes `provider \"aws\" { alias = \"secondary\" region = \"eu-west-1\" }`, en el recurso usas `resource \"aws_s3_bucket\" \"eu\" { provider = aws.secondary }`. El provider sin alias es el 'default' y no necesita referencia explícita.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "alias"]
+    },
+    {
+      "id": "providers-016",
+      "question": "¿Qué hace `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`?",
+      "answer": "Genera o actualiza el `.terraform.lock.hcl` incluyendo los hashes para múltiples plataformas, aunque la máquina actual sea solo una de ellas.",
+      "explanation": "Útil en equipos mixtos (Mac M1 + Linux CI). Sin esta opción, el lock solo incluye hashes de la plataforma actual. En CI con otra plataforma, init fallaría al no encontrar el hash correcto en el lock.",
+      "difficulty": "advanced",
+      "tags": ["prod", "providers", "lock", "ci-cd"]
+    },
+    {
+      "id": "providers-017",
+      "question": "¿Por qué Terraform descarga los providers en `.terraform/` y no los incluye en los archivos de configuración?",
+      "answer": "Los providers son binarios compilados que pueden ser grandes y específicos de la plataforma. Se excluyen del VCS (como node_modules en Node.js) y se obtienen bajo demanda mediante init.",
+      "explanation": "El directorio .terraform/ no se commitea al VCS. El lock file (.terraform.lock.hcl) sí se commitea — contiene la información suficiente para reproducir la misma descarga en cualquier máquina.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "fundamentos"]
+    },
+    {
+      "id": "providers-018",
+      "question": "¿Qué es un Private Registry en el contexto de Terraform?",
+      "answer": "Un registro de módulos y providers privados, disponible en HCP Terraform o Terraform Enterprise, que permite distribuir internamente módulos propios sin hacerlos públicos en registry.terraform.io.",
+      "explanation": "Permite a organizaciones compartir módulos internos con el mismo flujo que el Registry público. Soporta versionado y documentación. Los módulos se referencian como `source = app.terraform.io/mi-org/vpc/aws`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "registry", "hcp-terraform"]
+    },
+    {
+      "id": "providers-019",
+      "question": "¿Qué constraint de versión usarías si quieres exactamente la versión 5.2.1 de un provider?",
+      "answer": "`version = \"= 5.2.1\"` o simplemente `version = \"5.2.1\"`.",
+      "explanation": "Fijar una versión exacta garantiza máxima reproducibilidad pero requiere actualización manual. El constraint `= 5.2.1` equivale a `5.2.1`. Útil en entornos críticos donde no quieres actualizaciones automáticas.",
+      "difficulty": "basic",
+      "tags": ["cert", "providers", "versiones"]
+    },
+    {
+      "id": "providers-020",
+      "question": "¿Qué constraint de versión usarías para permitir cualquier versión del provider excepto la 4.x?",
+      "answer": "`version = \"!= 4.0, >= 3.0\"` o con rangos: `version = \">= 3.0, < 4.0, >= 5.0\"`.",
+      "explanation": "El operador != excluye versiones específicas. En la práctica, es más común usar >= y ~> para definir rangos positivos. Excluir un major completo requiere combinar constraints.",
+      "difficulty": "advanced",
+      "tags": ["cert", "providers", "versiones", "semver"]
+    },
+    {
+      "id": "providers-021",
+      "question": "¿Qué sucede si defines dos bloques `provider \"aws\"` sin alias en la misma configuración?",
+      "answer": "Terraform lanza un error: solo puede haber un provider default por tipo. Si necesitas dos configuraciones del mismo provider, uno debe tener alias.",
+      "explanation": "El provider sin alias es el 'default'. Todos los recursos que no especifiquen `provider = aws.algo` usarán el default. Si necesitas dos regiones en el mismo módulo, uno debe tener `alias = \"secondary\"` u otro nombre.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "alias"]
+    },
+    {
+      "id": "providers-022",
+      "question": "¿Cómo se especifica el source de un provider de Community en `required_providers`?",
+      "answer": "Con el formato completo `namespace/tipo`: `source = \"nombre-usuario/nombre-provider\"`. Ej: `source = \"mycorp/mycustomcloud\"`.",
+      "explanation": "Los providers Official de HashiCorp tienen fuente implícita `hashicorp/nombre`. Los Partner y Community requieren el namespace completo. Siempre especificar la fuente explícita en required_providers para evitar ambigüedades.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "registry", "providers"]
+    },
+    {
+      "id": "providers-023",
+      "question": "¿Qué archivo debes commitear para garantizar versiones de providers consistentes, y cuál NO debes commitear?",
+      "answer": "Commitear: `.terraform.lock.hcl`. NO commitear: `.terraform/` (directorio con binarios de providers) ni `terraform.tfstate`.",
+      "explanation": ".terraform.lock.hcl contiene la información de versiones y hashes. .terraform/ contiene los binarios, que son grandes y específicos de plataforma. terraform.tfstate puede contener datos sensibles.",
+      "difficulty": "basic",
+      "tags": ["cert", "providers", "lock"]
+    },
+    {
+      "id": "providers-024",
+      "question": "¿Cuándo necesitas especificar `provider = aws.alias` en un recurso?",
+      "answer": "Solo cuando el recurso debe usar un provider con alias diferente al provider default. Si el recurso debe usar el provider default, no se especifica `provider`.",
+      "explanation": "Ejemplo: si tienes un provider default `aws` (sin alias) para us-east-1 y `aws.eu` para eu-west-1, los recursos en us-east-1 no necesitan especificar `provider`. Solo los de eu-west-1 necesitan `provider = aws.eu`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "alias"]
+    },
+    {
+      "id": "providers-025",
+      "question": "¿Qué ocurre durante `terraform init` cuando el `.terraform.lock.hcl` ya existe?",
+      "answer": "Terraform descarga las versiones exactas registradas en el lock file, ignorando si hay versiones más nuevas disponibles dentro de los constraints.",
+      "explanation": "El lock file tiene precedencia sobre los constraints de versión para garantizar reproducibilidad. Para actualizar a versiones más nuevas (aún dentro de los constraints) hay que usar `terraform init -upgrade`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "lock", "init"]
+    },
+    {
+      "id": "providers-026",
+      "question": "¿Cuál es el formato del `source` de un provider en `required_providers`?",
+      "answer": "`\"[hostname/]namespace/tipo\"`. El hostname es opcional y por defecto es `registry.terraform.io`. Ej: `\"hashicorp/aws\"` o `\"registry.terraform.io/hashicorp/aws\"`.",
+      "explanation": "El hostname se usa para providers en registries privados o mirrors. `hashicorp/aws` y `registry.terraform.io/hashicorp/aws` son equivalentes. Para un provider en un registry privado: `app.terraform.io/mi-org/mi-provider`.",
+      "difficulty": "intermediate",
+      "tags": ["cert", "providers", "registry"]
+    },
+    {
+      "id": "providers-027",
+      "question": "¿Qué problema resuelve el uso de providers con `alias` en lugar de múltiples archivos de configuración?",
+      "answer": "Permite gestionar infraestructura en múltiples regiones o cuentas dentro de un mismo módulo de Terraform, sin duplicar código ni usar múltiples directorios.",
+      "explanation": "Alternativa sin alias: usar workspaces o directorios separados por región. Con alias: un módulo gestiona us-east-1 y eu-west-1 simultáneamente. La elección depende de si los recursos de distintas regiones tienen dependencias entre sí.",
+      "difficulty": "advanced",
+      "tags": ["cert", "prod", "providers", "alias"]
+    },
+    {
+      "id": "providers-028",
+      "question": "¿Qué significa que un provider sea 'Official' en el Terraform Registry?",
+      "answer": "Es mantenido y publicado directamente por HashiCorp. Tiene soporte oficial, ciclos de release coordinados con Terraform y documentación en la web de HashiCorp.",
+      "explanation": "Ejemplos de providers Official: hashicorp/aws, hashicorp/azurerm, hashicorp/google, hashicorp/kubernetes. Se distinguen por el badge 'Official' en el Registry. Los Partner son mantenidos por empresas verificadas, no por HashiCorp.",
+      "difficulty": "basic",
+      "tags": ["cert", "registry", "tiers"]
     }
   ],
   "quiz": {
-    "passingScore": 80,
+    "passingScore": 85,
     "questions": [
       {
         "id": "providers-q001",
         "type": "single-choice",
-        "question": "¿Cuál es la URL del registro público oficial de providers de Terraform?",
+        "question": "¿Cuál es la URL del registro público oficial de providers y módulos de Terraform?",
         "options": [
           { "id": "a", "text": "providers.terraform.io" },
           { "id": "b", "text": "registry.terraform.io" },
-          { "id": "c", "text": "hub.terraform.io" },
-          { "id": "d", "text": "marketplace.hashicorp.com" }
+          { "id": "c", "text": "hub.hashicorp.com" },
+          { "id": "d", "text": "marketplace.terraform.io" }
         ],
         "correctAnswers": ["b"],
-        "explanation": "registry.terraform.io es el repositorio oficial donde se publican providers y módulos de Terraform.",
-        "tags": ["registry"]
+        "explanation": "registry.terraform.io es el registro público oficial donde se publican y distribuyen providers y módulos. Es el lugar por defecto donde terraform init busca providers.",
+        "tags": ["cert", "registry"]
       },
       {
         "id": "providers-q002",
@@ -105,27 +265,27 @@
           { "id": "d", "text": "providers.tf" }
         ],
         "correctAnswers": ["c"],
-        "explanation": ".terraform.lock.hcl registra las versiones exactas de providers. Commitearlo garantiza que todo el equipo use las mismas versiones.",
-        "tags": ["providers", "lock"]
+        "explanation": ".terraform.lock.hcl registra las versiones exactas y hashes de los providers. Al commitearlo, todos en el equipo obtienen las mismas versiones al ejecutar terraform init.",
+        "tags": ["cert", "providers", "lock"]
       },
       {
         "id": "providers-q003",
         "type": "single-choice",
-        "question": "Un provider con constraint `~> 4.2` en Terraform, ¿qué versiones acepta?",
+        "question": "El provider AWS está declarado con `version = \"~> 4.2\"`. ¿Cuáles de estas versiones serían aceptadas?",
         "options": [
-          { "id": "a", "text": "Cualquier versión >= 4.2" },
-          { "id": "b", "text": "Versiones >= 4.2 y < 5.0" },
-          { "id": "c", "text": "Exactamente la versión 4.2" },
-          { "id": "d", "text": "Versiones >= 4.0 y < 5.0" }
+          { "id": "a", "text": "3.75.0" },
+          { "id": "b", "text": "4.1.9" },
+          { "id": "c", "text": "4.67.0" },
+          { "id": "d", "text": "5.0.0" }
         ],
-        "correctAnswers": ["b"],
-        "explanation": "~> 4.2 permite versiones >= 4.2 y < 5.0 (el major version no puede cambiar). Equivale a >= 4.2, < 5.0.",
-        "tags": ["providers", "versiones"]
+        "correctAnswers": ["c"],
+        "explanation": "~> 4.2 acepta versiones >= 4.2 y < 5.0. 3.75.0 (< 4.2), 4.1.9 (< 4.2) y 5.0.0 (>= 5.0) son rechazadas. Solo 4.67.0 cumple >= 4.2 y < 5.0.",
+        "tags": ["cert", "providers", "versiones"]
       },
       {
         "id": "providers-q004",
         "type": "multiple-choice",
-        "question": "¿Cuáles de los siguientes son tiers de providers en el Terraform Registry? (selecciona todos los correctos)",
+        "question": "¿Cuáles son los tres tiers de providers en el Terraform Registry? (selecciona todos los correctos)",
         "options": [
           { "id": "a", "text": "Official" },
           { "id": "b", "text": "Enterprise" },
@@ -134,34 +294,169 @@
           { "id": "e", "text": "Premium" }
         ],
         "correctAnswers": ["a", "c", "d"],
-        "explanation": "Los tres tiers son Official (HashiCorp), Partner (empresas verificadas) y Community (contribuidores externos). Enterprise y Premium no son tiers del registry.",
-        "tags": ["registry", "tiers"]
+        "explanation": "Los tres tiers son Official (HashiCorp), Partner (empresas verificadas) y Community (contribuidores externos). Enterprise y Premium no son tiers del Registry.",
+        "tags": ["cert", "registry", "tiers"]
       },
       {
         "id": "providers-q005",
         "type": "true-false",
-        "question": "Es posible usar múltiples configuraciones del mismo provider (por ejemplo, para distintas regiones de AWS) en un mismo proyecto de Terraform.",
+        "question": "Es posible tener dos configuraciones del mismo provider (por ejemplo, para dos regiones de AWS) en el mismo módulo de Terraform usando alias.",
         "options": [
           { "id": "true", "text": "Verdadero" },
           { "id": "false", "text": "Falso" }
         ],
         "correctAnswers": ["true"],
-        "explanation": "Usando el atributo `alias` en el bloque provider, puedes tener múltiples instancias del mismo provider con diferentes configuraciones.",
-        "tags": ["providers", "alias"]
+        "explanation": "Con el atributo alias en el bloque provider, puedes tener múltiples instancias del mismo provider con diferentes configuraciones. Los recursos referencian al provider deseado con provider = aws.nombre_alias.",
+        "tags": ["cert", "providers", "alias"]
       },
       {
         "id": "providers-q006",
         "type": "single-choice",
-        "question": "¿Qué comando actualiza las versiones de providers ignorando el archivo lock?",
+        "question": "¿Qué comando actualiza los providers a versiones más nuevas dentro de los constraints, ignorando el lock file actual?",
         "options": [
           { "id": "a", "text": "terraform init -update" },
-          { "id": "b", "text": "terraform upgrade" },
+          { "id": "b", "text": "terraform providers update" },
           { "id": "c", "text": "terraform init -upgrade" },
-          { "id": "d", "text": "terraform providers update" }
+          { "id": "d", "text": "terraform upgrade --providers" }
         ],
         "correctAnswers": ["c"],
-        "explanation": "terraform init -upgrade recalcula las versiones de providers permitidas por los constraints y actualiza el archivo .terraform.lock.hcl.",
-        "tags": ["providers", "comandos"]
+        "explanation": "terraform init -upgrade recalcula las versiones de providers dentro de los constraints definidos y actualiza el .terraform.lock.hcl. Sin -upgrade, init respeta el lock file existente.",
+        "tags": ["cert", "providers", "comandos"]
+      },
+      {
+        "id": "providers-q007",
+        "type": "single-choice",
+        "question": "Which of the following is the correct way to declare a required provider version in modern Terraform?",
+        "options": [
+          { "id": "a", "text": "provider \"aws\" { version = \"~> 5.0\" }" },
+          { "id": "b", "text": "terraform { required_providers { aws = { source = \"hashicorp/aws\" version = \"~> 5.0\" } } }" },
+          { "id": "c", "text": "provider_version \"aws\" { constraint = \"~> 5.0\" }" },
+          { "id": "d", "text": "providers { aws = \"~> 5.0\" }" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "The correct way is to use required_providers inside the terraform {} block. Declaring version directly in the provider {} block is deprecated and generates warnings. It still works but should not be used in new configurations.",
+        "tags": ["cert", "deprecated", "providers", "versiones"]
+      },
+      {
+        "id": "providers-q008",
+        "type": "true-false",
+        "question": "El directorio `.terraform/` debe commitearse al repositorio para garantizar que todos usen los mismos providers.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": ".terraform/ contiene los binarios de providers, que son grandes y específicos de plataforma (Linux, macOS, Windows). No debe commitearse. Lo que garantiza consistencia es .terraform.lock.hcl, que sí debe commitearse.",
+        "tags": ["cert", "providers", "lock"]
+      },
+      {
+        "id": "providers-q009",
+        "type": "single-choice",
+        "question": "Un equipo tiene un Mac con Apple Silicon (arm64) y un servidor de CI con Linux (amd64). Al ejecutar `terraform init` en el Mac, el .terraform.lock.hcl solo incluye hashes para darwin_arm64. ¿Qué problema surge en CI y cómo se resuelve?",
+        "options": [
+          { "id": "a", "text": "No hay problema; Terraform descarga los providers automáticamente en CI" },
+          { "id": "b", "text": "CI falla porque el lock file no tiene hashes para linux_amd64; se resuelve con `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64`" },
+          { "id": "c", "text": "CI falla y la solución es no usar lock file en pipelines" },
+          { "id": "d", "text": "CI falla y la solución es ejecutar terraform init -upgrade en CI" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "El lock file incluye hashes por plataforma. Si solo tiene darwin_arm64, terraform init en linux_amd64 falla la verificación. La solución es ejecutar `terraform providers lock` especificando todas las plataformas del equipo.",
+        "tags": ["prod", "providers", "lock", "ci-cd"]
+      },
+      {
+        "id": "providers-q010",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes afirmaciones sobre el bloque `required_providers` son correctas? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Va dentro del bloque `terraform {}`" },
+          { "id": "b", "text": "Permite especificar la versión y el source de cada provider" },
+          { "id": "c", "text": "Es obligatorio declarar todos los providers que se usen" },
+          { "id": "d", "text": "Reemplaza al uso de `version` en el bloque `provider {}`" },
+          { "id": "e", "text": "Permite tener múltiples instancias del mismo provider con alias" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "required_providers va dentro de terraform {}, permite especificar source y version, y reemplaza la forma deprecated de declarar versiones en provider {}. No es obligatorio para providers con fuente implícita (aunque sí recomendado). El alias se configura en el bloque provider, no en required_providers.",
+        "tags": ["cert", "providers", "versiones"]
+      },
+      {
+        "id": "providers-q011",
+        "type": "single-choice",
+        "question": "¿Cuál es el source correcto para el provider de AWS en `required_providers`?",
+        "options": [
+          { "id": "a", "text": "aws/amazon" },
+          { "id": "b", "text": "amazon/aws" },
+          { "id": "c", "text": "hashicorp/aws" },
+          { "id": "d", "text": "terraform/aws" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "El provider de AWS es mantenido por HashiCorp y su source es hashicorp/aws. El formato es namespace/tipo. Es equivalente a registry.terraform.io/hashicorp/aws.",
+        "tags": ["cert", "providers", "registry"]
+      },
+      {
+        "id": "providers-q012",
+        "type": "single-choice",
+        "question": "A developer declares `version = \"~> 5\"` in the `provider \"aws\"` block. What is the implication?",
+        "options": [
+          { "id": "a", "text": "It is the correct, modern way to pin provider versions" },
+          { "id": "b", "text": "It is deprecated; version constraints should be in required_providers" },
+          { "id": "c", "text": "It will cause a validation error" },
+          { "id": "d", "text": "It only works with Terraform 0.12 and earlier" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Using `version` directly in the provider block is deprecated. While it still functions, it generates a deprecation warning. The correct place for version constraints is the `required_providers` block inside `terraform {}`.",
+        "tags": ["cert", "deprecated", "providers", "versiones"]
+      },
+      {
+        "id": "providers-q013",
+        "type": "true-false",
+        "question": "Si no especificas el `source` de un provider en `required_providers`, Terraform siempre lo buscará en el namespace `hashicorp/`.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "Si no se especifica source, Terraform infiere el namespace desde el tipo del primer recurso que lo use. Para el provider 'aws' usado en 'aws_instance', infiere hashicorp/aws. Pero esto es implícito y no garantizado para todos los providers. Es una buena práctica siempre declarar source explícitamente.",
+        "tags": ["cert", "providers", "registry"]
+      },
+      {
+        "id": "providers-q014",
+        "type": "single-choice",
+        "question": "¿Qué hace el comando `terraform providers lock` sin flags adicionales?",
+        "options": [
+          { "id": "a", "text": "Actualiza el .terraform.lock.hcl para la plataforma actual del sistema" },
+          { "id": "b", "text": "Bloquea el state para que otros no puedan hacer apply" },
+          { "id": "c", "text": "Descarga y cachea todos los providers sin inicializar el backend" },
+          { "id": "d", "text": "Muestra qué providers están bloqueados en el lock file" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "terraform providers lock genera o actualiza el .terraform.lock.hcl para la plataforma actual. Con -platform=X se pueden incluir múltiples plataformas. No confundir con state locking.",
+        "tags": ["cert", "providers", "comandos", "lock"]
+      },
+      {
+        "id": "providers-q015",
+        "type": "single-choice",
+        "question": "Un módulo necesita crear recursos en dos cuentas de AWS diferentes. ¿Cuál es la forma correcta de manejar esto?",
+        "options": [
+          { "id": "a", "text": "Crear dos archivos de configuración separados, uno por cuenta" },
+          { "id": "b", "text": "Usar dos bloques provider \"aws\" con diferentes alias y credenciales" },
+          { "id": "c", "text": "Ejecutar terraform apply dos veces con variables diferentes" },
+          { "id": "d", "text": "Usar workspaces de Terraform para separar las cuentas" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los provider aliases son la solución para multi-cuenta o multi-región en el mismo módulo. Cada provider puede tener configuraciones diferentes (credenciales, región). Los recursos usan `provider = aws.cuenta_secundaria` para especificar cuál usar.",
+        "tags": ["cert", "prod", "providers", "alias"]
+      },
+      {
+        "id": "providers-q016",
+        "type": "true-false",
+        "question": "After running `terraform init`, the `.terraform.lock.hcl` file is automatically added to `.gitignore`.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "Terraform does not modify .gitignore. The .terraform.lock.hcl should be committed to version control — it is NOT added to .gitignore. The .terraform/ directory (with provider binaries) should be in .gitignore.",
+        "tags": ["cert", "providers", "lock"]
       }
     ]
   }

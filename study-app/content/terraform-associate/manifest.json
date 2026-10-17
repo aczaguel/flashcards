@@ -1,46 +1,81 @@
 {
   "schemaVersion": "1.0",
-  "contentVersion": "1.0.0",
+  "contentVersion": "2.0.0",
   "certificationId": "terraform-associate",
-  "name": "HashiCorp Terraform Associate",
-  "description": "Preparación para el examen Terraform Associate 003 (TA-003). Cubre IaC, providers, state, recursos y módulos.",
+  "name": "HashiCorp Terraform Associate (004)",
+  "description": "Preparación para el examen Terraform Associate 004 (TA-004) basado en Terraform 1.12. Cubre IaC, providers, state, HCL, módulos, lifecycle, secrets, operaciones y HCP Terraform.",
   "language": "es-MX",
-  "totalEstimatedHours": 20,
+  "totalEstimatedHours": 40,
   "modules": [
     {
       "id": "core-concepts",
       "order": 1,
       "name": "Conceptos Fundamentales",
-      "description": "Infraestructura como código, flujo de trabajo de Terraform y comandos básicos",
+      "description": "IaC declarativa, flujo de trabajo de Terraform y comandos CLI esenciales",
       "file": "modules/01-core-concepts.json"
     },
     {
       "id": "providers",
       "order": 2,
       "name": "Providers y Registry",
-      "description": "Providers, Terraform Registry, versiones y configuración",
+      "description": "Providers, Terraform Registry, version constraints, lock file y aliases",
       "file": "modules/02-providers.json"
     },
     {
       "id": "state",
       "order": 3,
       "name": "State Management",
-      "description": "State local y remoto, backends, bloqueo y gestión del estado",
+      "description": "State local y remoto, backends, locking, drift, refresh-only y operaciones de state",
       "file": "modules/03-state.json"
     },
     {
       "id": "resources-modules",
       "order": 4,
       "name": "Resources, Variables y Módulos",
-      "description": "Recursos, variables de entrada/salida, locals, data sources y módulos reutilizables",
+      "description": "Recursos, meta-arguments, data sources, variables, outputs, locals y módulos",
       "file": "modules/04-resources-modules.json"
+    },
+    {
+      "id": "hcl-expressions",
+      "order": 5,
+      "name": "HCL: Tipos, Expresiones y Funciones",
+      "description": "Tipos complejos, expresiones for, bloques dynamic, funciones built-in y valores efímeros",
+      "file": "modules/05-hcl-expressions.json"
+    },
+    {
+      "id": "lifecycle-validation",
+      "order": 6,
+      "name": "Lifecycle y Validación",
+      "description": "depends_on, lifecycle block, preconditions, postconditions, validación de variables y bloque check",
+      "file": "modules/06-lifecycle-validation.json"
+    },
+    {
+      "id": "secrets-ephemeral",
+      "order": 7,
+      "name": "Secrets, Sensitive y Ephemeral",
+      "description": "sensitive vs ephemeral vs write-only, secretos en el state y valores que no persisten",
+      "file": "modules/07-secrets-ephemeral.json"
+    },
+    {
+      "id": "operations-troubleshooting",
+      "order": 8,
+      "name": "Operaciones y Troubleshooting",
+      "description": "Import declarativo e imperativo, logging, debugging, -target, -replace y mantenimiento",
+      "file": "modules/08-operations-troubleshooting.json"
+    },
+    {
+      "id": "hcp-terraform",
+      "order": 9,
+      "name": "HCP Terraform",
+      "description": "Workspaces, VCS workflow, remote runs, variables, proyectos, teams y bloque cloud",
+      "file": "modules/09-hcp-terraform.json"
     }
   ],
   "exams": [
     {
       "id": "final",
-      "name": "Examen Final Terraform Associate 003",
-      "description": "Simulacro del examen oficial TA-003",
+      "name": "Simulacro Terraform Associate (004)",
+      "description": "60 preguntas originales basadas en los objetivos del examen TA-004. passingScore 85% es objetivo interno de preparación, no criterio oficial.",
       "file": "exams/final.json"
     }
   ]
