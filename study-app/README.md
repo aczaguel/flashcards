@@ -19,7 +19,8 @@ Motor genérico de estudio basado en flashcards, repetición espaciada, quizzes 
 9. [Exportar e importar progreso](#9-exportar-e-importar-progreso)
 10. [Instalar como PWA](#10-instalar-como-pwa)
 11. [Desplegar en AWS S3 + CloudFront](#11-desplegar-en-aws-s3--cloudfront)
-12. [Arquitectura del proyecto](#12-arquitectura-del-proyecto)
+12. [Actualizar contenido en producción](#12-actualizar-contenido-en-producción)
+13. [Arquitectura del proyecto](#13-arquitectura-del-proyecto)
 
 ---
 
@@ -420,9 +421,55 @@ Los módulos **nunca visitados** requieren conexión la primera vez.
 
 Ver la guía completa en [`docs/deploy-aws.md`](./docs/deploy-aws.md).
 
+**Infraestructura activa:**
+
+| Recurso | Valor |
+|---|---|
+| S3 Bucket | `certifications-main-data` |
+| CloudFront Distribution ID | `E10YUABM664R12` |
+| URL pública | `https://d145i64h4t0mbm.cloudfront.net` |
+
 ---
 
-## 12. Arquitectura del proyecto
+## 12. Actualizar contenido en producción
+
+Cada vez que agregues o modifiques certificaciones, módulos o flashcards, ejecuta estos tres comandos para publicar los cambios:
+
+### 1. Subir archivos actualizados a S3
+
+```bash
+cd /ruta/a/study-app
+
+aws s3 sync . s3://certifications-main-data \
+  --exclude ".git/*" \
+  --exclude "tests/*" \
+  --exclude "docs/*" \
+  --exclude "*.test.js" \
+  --exclude "*.md" \
+  --delete
+```
+
+### 2. Invalidar caché de CloudFront
+
+```bash
+aws cloudfront create-invalidation \
+  --distribution-id E10YUABM664R12 \
+  --paths "/*"
+```
+
+Los cambios tardan ~1 minuto en propagarse después de la invalidación.
+
+### 3. Guardar cambios en GitHub
+
+```bash
+git add .
+git commit -m "descripción del cambio"
+git push
+```
+
+---
+
+## 13. Arquitectura del proyecto
 
 ```
 study-app/
