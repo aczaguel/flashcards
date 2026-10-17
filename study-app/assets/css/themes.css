@@ -1,0 +1,57 @@
+/* ============================================================
+   themes.css — Dark mode overrides
+   Se aplica en [data-theme="dark"] o via prefers-color-scheme
+   cuando no hay preferencia guardada explícitamente.
+   ============================================================ */
+
+[data-theme="dark"] {
+  --bg-primary:           #0F172A;
+  --bg-secondary:         #1E293B;
+  --bg-card:              #1E293B;
+  --bg-overlay:           rgba(0, 0, 0, 0.7);
+
+  --text-primary:         #F1F5F9;
+  --text-secondary:       #94A3B8;
+  --text-muted:           #64748B;
+
+  --border-color:         #334155;
+  --border-color-strong:  #475569;
+
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md:  0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg:  0 10px 15px rgba(0, 0, 0, 0.5);
+
+  /* Primario más claro para contraste WCAG AA en dark */
+  --color-primary:        #6B8AF9;
+  --color-primary-hover:  #8FA4FB;
+}
+
+/* Soporte automático por preferencia del sistema
+   (solo cuando el usuario no ha elegido tema explícitamente) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg-primary:           #0F172A;
+    --bg-secondary:         #1E293B;
+    --bg-card:              #1E293B;
+    --bg-overlay:           rgba(0, 0, 0, 0.7);
+    --text-primary:         #F1F5F9;
+    --text-secondary:       #94A3B8;
+    --text-muted:           #64748B;
+    --border-color:         #334155;
+    --border-color-strong:  #475569;
+    --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md:  0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg:  0 10px 15px rgba(0, 0, 0, 0.5);
+    --color-primary:        #6B8AF9;
+    --color-primary-hover:  #8FA4FB;
+  }
+}
+
+/* ── Reducir movimiento (WCAG 2.3.3) ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

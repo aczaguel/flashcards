@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "certificationId": "aws-saa",
+  "name": "AWS Solutions Architect Associate",
+  "description": "Programa de estudio para el examen SAA-C03. Cubre los servicios fundamentales de AWS y los principios de arquitectura en la nube.",
+  "language": "es-MX",
+  "totalEstimatedHours": 40,
+  "modules": [
+    {
+      "id": "iam",
+      "order": 1,
+      "name": "Identity and Access Management",
+      "description": "Usuarios, grupos, roles, políticas y mejores prácticas de seguridad en AWS",
+      "file": "modules/01-iam.json"
+    },
+    {
+      "id": "ec2",
+      "order": 2,
+      "name": "Elastic Compute Cloud",
+      "description": "Instancias, tipos, AMIs, grupos de seguridad, almacenamiento y opciones de compra",
+      "file": "modules/02-ec2.json"
+    }
+  ],
+  "exams": [
+    {
+      "id": "final",
+      "name": "Examen Final SAA-C03",
+      "description": "Simulacro del examen oficial AWS Solutions Architect Associate",
+      "file": "exams/final.json"
+    }
+  ]
+}

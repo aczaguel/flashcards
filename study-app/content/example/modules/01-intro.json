@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "example-cert",
+  "language": "es-MX",
+  "module": {
+    "id": "intro",
+    "order": 1,
+    "name": "Módulo de Introducción",
+    "description": "Este es un módulo de ejemplo. Reemplaza el contenido con el tuyo.",
+    "estimatedMinutes": 15
+  },
+  "flashcards": [
+    {
+      "id": "intro-001",
+      "question": "¿Cuál es la pregunta de tu primera flashcard?",
+      "answer": "Esta es la respuesta de tu primera flashcard.",
+      "explanation": "Agrega una explicación adicional aquí (opcional).",
+      "difficulty": "basic",
+      "tags": ["ejemplo", "intro"]
+    },
+    {
+      "id": "intro-002",
+      "question": "¿Cuál es la segunda pregunta?",
+      "answer": "Esta es la segunda respuesta.",
+      "difficulty": "intermediate",
+      "tags": ["ejemplo"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "intro-q001",
+        "type": "single-choice",
+        "question": "¿Cuál de las siguientes opciones es correcta?",
+        "options": [
+          { "id": "a", "text": "Opción A (correcta)" },
+          { "id": "b", "text": "Opción B" },
+          { "id": "c", "text": "Opción C" },
+          { "id": "d", "text": "Opción D" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "La opción A es correcta porque..."
+      },
+      {
+        "id": "intro-q002",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes opciones son correctas? (selecciona todas)",
+        "options": [
+          { "id": "a", "text": "Opción A (correcta)" },
+          { "id": "b", "text": "Opción B" },
+          { "id": "c", "text": "Opción C (correcta)" },
+          { "id": "d", "text": "Opción D" }
+        ],
+        "correctAnswers": ["a", "c"],
+        "explanation": "A y C son correctas porque..."
+      },
+      {
+        "id": "intro-q003",
+        "type": "true-false",
+        "question": "Study App funciona completamente offline después del primer uso.",
+        "options": [
+          { "id": "true",  "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Study App es una PWA con Service Worker que cachea todo el contenido."
+      }
+    ]
+  }
+}

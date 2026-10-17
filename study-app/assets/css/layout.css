@@ -1,0 +1,176 @@
+/* ============================================================
+   layout.css — Header, Navigation, Page layout
+   Mobile-first: base para 360px, breakpoints para +640px
+   ============================================================ */
+
+/* ── App Header ── */
+.app-header {
+  position: sticky;
+  top: 0;
+  top: max(0px, var(--safe-top));
+  z-index: 100;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0 var(--spacing-md);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  box-shadow: var(--shadow-sm);
+  /* Prevenir overflow en pantallas pequeñas */
+  min-width: 0;
+}
+
+.app-header__brand {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: var(--touch-target);
+}
+
+.app-header__brand:hover {
+  text-decoration: none;
+  color: var(--color-primary);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ── Page container — mobile-first ── */
+.page {
+  flex: 1;
+  padding: var(--spacing-md);
+  /* Centrado con ancho máximo para desktop */
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  /* Safe area bottom (iPhone home bar) */
+  padding-bottom: max(var(--spacing-md), var(--safe-bottom));
+}
+
+@media (min-width: 640px) {
+  .page {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    padding-bottom: max(var(--spacing-xl), var(--safe-bottom));
+  }
+}
+
+/* ── Breadcrumb / Back nav ── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  /* Overflow horizontal silencioso en móvil */
+  overflow: hidden;
+}
+
+.breadcrumb__item {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.breadcrumb__item--link {
+  color: var(--color-primary);
+  cursor: pointer;
+  min-height: var(--touch-target);
+  display: inline-flex;
+  align-items: center;
+  max-width: none;
+}
+
+.breadcrumb__item--link:hover { text-decoration: underline; }
+
+.breadcrumb__separator {
+  color: var(--text-muted);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* ── Section headers ── */
+.section-header {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+  /* Prevenir overflow en títulos largos */
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.section-subtitle {
+  margin-top: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+/* ── Responsive helpers ── */
+@media (max-width: 360px) {
+  .section-title { font-size: var(--font-size-lg); }
+  .stat-grid     { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Stat grid — responsive ── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  margin: var(--spacing-md) 0;
+}
+
+@media (min-width: 400px) {
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.stat-item {
+  background-color: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+}
+
+.stat-item__value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+  /* Prevenir overflow de números grandes */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-item__label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: var(--line-height-tight);
+}
+
+/* ── Divider ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: var(--spacing-md) 0;
+}

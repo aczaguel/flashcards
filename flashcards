@@ -1,0 +1,1391 @@
+# Proyecto: Study App — Motor de estudio basado en JSON
+
+## 1. Rol
+
+Actúa como un **Senior Software Architect + Senior Frontend Engineer especializado en PWA, JavaScript y AWS**.
+
+Debes diseñar e implementar una aplicación web de estudio llamada provisionalmente **Study App**.
+
+El objetivo principal es crear un motor genérico de aprendizaje basado en:
+
+- Flashcards.
+- Repetición y memorización.
+- Módulos de estudio.
+- Quizzes por módulo.
+- Exámenes finales.
+- Seguimiento del progreso.
+- Estadísticas.
+- Funcionamiento offline.
+- Contenido completamente desacoplado del código mediante archivos JSON.
+
+La aplicación NO debe estar diseñada específicamente para AWS, Azure, Kubernetes ni ninguna certificación particular.
+
+Debe ser un **motor genérico de estudio** capaz de cargar cualquier certificación, curso o tema definido mediante archivos JSON.
+
+---
+
+# 2. Principios arquitectónicos
+
+Estas reglas son obligatorias.
+
+1. La aplicación debe ser **mobile-first**.
+2. Debe funcionar como **Progressive Web App (PWA)**.
+3. Debe poder instalarse en dispositivos móviles.
+4. Debe funcionar offline después de haber descargado el contenido.
+5. NO utilizar base de datos en el MVP.
+6. NO utilizar backend en el MVP.
+7. NO utilizar API Gateway.
+8. NO utilizar Lambda.
+9. NO utilizar DynamoDB.
+10. NO utilizar MongoDB.
+11. NO utilizar autenticación en el MVP.
+12. Todo el contenido académico debe provenir de archivos JSON.
+13. El progreso del estudiante debe almacenarse localmente mediante **IndexedDB**.
+14. `localStorage` puede utilizarse únicamente para preferencias pequeñas de UI/configuración.
+15. La aplicación debe poder ejecutarse localmente mediante un servidor HTTP estático.
+16. La aplicación debe poder desplegarse posteriormente en **AWS S3 + CloudFront**.
+17. Ninguna certificación debe estar hardcodeada en el código.
+18. Agregar una nueva certificación NO debe requerir modificar JavaScript.
+19. Agregar un nuevo módulo NO debe requerir modificar JavaScript.
+20. La estructura JSON debe estar versionada.
+21. La aplicación debe validar los archivos JSON y manejar errores de contenido de forma segura.
+
+---
+
+# 3. Arquitectura general
+
+La aplicación debe seguir conceptualmente esta arquitectura:
+
+```text
+                    STUDY APP
+                        |
+          +-------------+-------------+
+          |                           |
+       CONTENIDO                   PROGRESO
+          |                           |
+          v                           v
+        JSON                      IndexedDB
+          |                           |
+   +------+------+                    |
+   |      |      |                    |
+   v      v      v                    |
+ Modules Cards  Exams                 |
+          |                           |
+          +-------------+-------------+
+                        |
+                        v
+                  Study Engine
+                        |
+             +----------+----------+
+             |          |          |
+             v          v          v
+        Flashcards     Quiz      Review
+                                 Engine
+```
+
+---
+
+# 4. Stack técnico
+
+Priorizar una implementación simple y mantenible.
+
+Frontend:
+
+- HTML5.
+- CSS3.
+- JavaScript moderno ES6+.
+- IndexedDB.
+- Service Worker.
+- Web App Manifest.
+- Fetch API.
+
+Evitar frameworks pesados si no aportan una ventaja clara.
+
+Si consideras necesario utilizar alguna librería externa, debes justificarla antes de agregarla.
+
+No introducir React, Angular, Vue, Node backend u otros frameworks simplemente por conveniencia.
+
+La aplicación debe minimizar dependencias.
+
+---
+
+# 5. Estructura propuesta
+
+Diseñar una estructura similar a:
+
+```text
+study-app/
+│
+├── index.html
+│
+├── manifest.webmanifest
+├── sw.js
+│
+├── assets/
+│   ├── css/
+│   ├── js/
+│   ├── icons/
+│   └── images/
+│
+├── src/
+│   ├── app.js
+│   ├── router.js
+│   ├── config.js
+│   │
+│   ├── services/
+│   │   ├── content-service.js
+│   │   ├── storage-service.js
+│   │   ├── progress-service.js
+│   │   ├── study-service.js
+│   │   └── exam-service.js
+│   │
+│   ├── components/
+│   │   ├── dashboard.js
+│   │   ├── certification-card.js
+│   │   ├── flashcard.js
+│   │   ├── quiz.js
+│   │   ├── progress-bar.js
+│   │   └── statistics.js
+│   │
+│   └── utils/
+│       ├── validators.js
+│       ├── dates.js
+│       └── helpers.js
+│
+├── content/
+│   ├── catalog.json
+│   │
+│   ├── aws-saa/
+│   │   ├── manifest.json
+│   │   ├── modules/
+│   │   │   ├── 01-example.json
+│   │   │   └── 02-example.json
+│   │   └── exams/
+│   │       └── final.json
+│   │
+│   └── example-certification/
+│       ├── manifest.json
+│       ├── modules/
+│       └── exams/
+│
+├── schemas/
+│   ├── catalog.schema.json
+│   ├── certification.schema.json
+│   ├── module.schema.json
+│   └── exam.schema.json
+│
+├── tests/
+│
+└── README.md
+```
+
+Puedes mejorar esta estructura si existe una razón arquitectónica clara.
+
+---
+
+# 6. Catálogo de certificaciones
+
+Debe existir:
+
+```text
+/content/catalog.json
+```
+
+Este archivo representa todas las certificaciones disponibles.
+
+Ejemplo:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "certifications": [
+    {
+      "id": "aws-saa",
+      "name": "AWS Solutions Architect Associate",
+      "description": "Preparación para AWS Solutions Architect Associate",
+      "manifest": "aws-saa/manifest.json",
+      "enabled": true
+    }
+  ]
+}
+```
+
+La aplicación debe leer dinámicamente este archivo.
+
+Nunca asumir certificaciones específicas desde JavaScript.
+
+---
+
+# 7. Manifest de certificación
+
+Cada certificación debe contener su propio:
+
+```text
+manifest.json
+```
+
+Ejemplo:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "certificationId": "aws-saa",
+  "name": "AWS Solutions Architect Associate",
+  "description": "Programa de estudio",
+  "modules": [
+    {
+      "id": "iam",
+      "order": 1,
+      "name": "IAM",
+      "file": "modules/01-iam.json"
+    },
+    {
+      "id": "ec2",
+      "order": 2,
+      "name": "EC2",
+      "file": "modules/02-ec2.json"
+    }
+  ],
+  "exams": [
+    {
+      "id": "final",
+      "name": "Examen final",
+      "file": "exams/final.json"
+    }
+  ]
+}
+```
+
+El manifest describe el contenido disponible.
+
+NO debe almacenar progreso del estudiante.
+
+---
+
+# 8. Separación contenido/progreso
+
+Esta regla es fundamental.
+
+```text
+JSON
+=
+CONOCIMIENTO
+
+
+IndexedDB
+=
+PROGRESO DEL ESTUDIANTE
+```
+
+Los JSON de `/content` deben considerarse **READ ONLY**.
+
+Nunca modificar archivos de contenido para guardar progreso.
+
+El progreso debe calcularse cruzando:
+
+```text
+Content JSON
++
+IndexedDB
+=
+Estado actual
+```
+
+---
+
+# 9. Study Content Schema v1
+
+Crear formalmente un estándar llamado:
+
+```text
+Study Content Schema v1
+```
+
+Debe permitir que posteriormente una IA pueda generar módulos compatibles con la aplicación.
+
+Ejemplo de módulo:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "type": "study-module",
+  "certificationId": "aws-saa",
+  "module": {
+    "id": "iam",
+    "order": 1,
+    "name": "Identity and Access Management",
+    "description": "Conceptos fundamentales de IAM",
+    "estimatedMinutes": 45
+  },
+  "flashcards": [
+    {
+      "id": "iam-001",
+      "question": "¿Qué es IAM?",
+      "answer": "Identity and Access Management.",
+      "explanation": "Permite administrar identidades y permisos.",
+      "difficulty": "basic",
+      "tags": [
+        "iam",
+        "security"
+      ]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "iam-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la función principal de IAM?",
+        "options": [
+          {
+            "id": "a",
+            "text": "Administrar identidades y permisos"
+          },
+          {
+            "id": "b",
+            "text": "Almacenar objetos"
+          },
+          {
+            "id": "c",
+            "text": "Crear redes privadas"
+          }
+        ],
+        "correctAnswers": [
+          "a"
+        ],
+        "explanation": "IAM controla autenticación y autorización."
+      }
+    ]
+  }
+}
+```
+
+Crear JSON Schema formal para validar este formato.
+
+---
+
+# 10. Tipos de preguntas
+
+Diseñar el sistema para soportar inicialmente:
+
+```text
+single-choice
+multiple-choice
+true-false
+```
+
+Dejar preparado el modelo para incorporar posteriormente:
+
+```text
+text-answer
+ordering
+matching
+```
+
+No es necesario implementar estos últimos en el MVP.
+
+---
+
+# 11. Flashcards
+
+Cada tarjeta debe mostrar inicialmente únicamente la pregunta.
+
+Ejemplo:
+
+```text
++--------------------------------+
+|                                |
+| ¿Qué diferencia existe entre   |
+| SQS Standard y FIFO?           |
+|                                |
+|       VER RESPUESTA            |
+|                                |
++--------------------------------+
+```
+
+Después de seleccionar "Ver respuesta":
+
+```text
++--------------------------------+
+| RESPUESTA                      |
+|                                |
+| Standard prioriza throughput   |
+| mientras FIFO garantiza...     |
+|                                |
+| ¿Cómo te fue?                  |
+|                                |
+| No sabía                       |
+| Difícil                        |
+| Bien                           |
+| Fácil                          |
++--------------------------------+
+```
+
+Registrar la evaluación seleccionada.
+
+---
+
+# 12. Repetición espaciada
+
+Implementar un motor sencillo de repetición espaciada.
+
+Cada flashcard debe mantener como mínimo:
+
+```text
+certificationId
+moduleId
+flashcardId
+reviewCount
+lastReviewed
+nextReview
+confidence
+status
+```
+
+Valores de confianza:
+
+```text
+UNKNOWN
+HARD
+GOOD
+EASY
+```
+
+El algoritmo debe calcular cuándo volver a mostrar la tarjeta.
+
+No es necesario implementar inicialmente un algoritmo excesivamente complejo.
+
+Priorizar:
+
+- claridad;
+- predictibilidad;
+- facilidad de mantenimiento.
+
+Documentar el algoritmo utilizado.
+
+---
+
+# 13. Estados
+
+Los módulos y certificaciones pueden tener estados calculados como:
+
+```text
+NOT_STARTED
+IN_PROGRESS
+REVIEW_REQUIRED
+COMPLETED
+MASTERED
+```
+
+Estos estados NO deben almacenarse necesariamente como verdad absoluta.
+
+Siempre que sea posible deben derivarse del progreso real.
+
+---
+
+# 14. Dashboard
+
+Crear un dashboard principal mobile-first.
+
+Debe mostrar todas las certificaciones detectadas en `catalog.json`.
+
+Ejemplo conceptual:
+
+```text
+STUDY DASHBOARD
+
+AWS Solutions Architect
+
+███████████████░░░░░ 73%
+
+7 / 10 módulos
+
+32 tarjetas pendientes hoy
+
+Último examen: 81%
+
+[ Continuar estudiando ]
+
+
+Terraform Associate
+
+███████░░░░░░░░░░░░░ 34%
+
+2 / 8 módulos
+
+18 tarjetas pendientes
+
+[ Continuar estudiando ]
+```
+
+---
+
+# 15. Dashboard de certificación
+
+Al seleccionar una certificación mostrar:
+
+```text
+Nombre
+
+Progreso general
+
+Tarjetas estudiadas
+
+Tarjetas dominadas
+
+Tarjetas pendientes de repaso
+
+Promedio de quizzes
+
+Último examen
+
+Mejor examen
+```
+
+Mostrar también los módulos:
+
+```text
+IAM
+████████████████████ 100%
+MASTERED
+
+EC2
+██████████████░░░░░░ 72%
+IN_PROGRESS
+
+S3
+████░░░░░░░░░░░░░░░░ 20%
+IN_PROGRESS
+
+VPC
+░░░░░░░░░░░░░░░░░░░░ 0%
+NOT_STARTED
+```
+
+---
+
+# 16. Flujo de navegación
+
+Implementar conceptualmente:
+
+```text
+Inicio
+  |
+  v
+Certificaciones
+  |
+  v
+Dashboard certificación
+  |
+  +--> Continuar estudiando
+  |
+  +--> Repasar pendientes
+  |
+  +--> Módulos
+  |       |
+  |       v
+  |     Módulo
+  |       |
+  |       +--> Flashcards
+  |       |
+  |       +--> Quiz
+  |
+  +--> Tarjetas difíciles
+  |
+  +--> Examen final
+          |
+          v
+       Resultado
+          |
+          v
+     Áreas a reforzar
+```
+
+---
+
+# 17. Quiz
+
+Los quizzes deben:
+
+- cargar preguntas desde JSON;
+- permitir navegación entre preguntas;
+- registrar respuestas;
+- calcular resultado;
+- mostrar preguntas correctas e incorrectas;
+- mostrar explicación;
+- registrar intento en IndexedDB.
+
+Debe existir `passingScore`.
+
+Mostrar claramente:
+
+```text
+Resultado
+
+17 / 20
+
+85%
+
+APROBADO
+```
+
+Y posteriormente:
+
+```text
+Áreas a reforzar
+
+IAM Policies
+2 errores
+
+Roles
+1 error
+
+S3 Policies
+1 error
+```
+
+---
+
+# 18. Examen final
+
+Debe funcionar similar al quiz pero permitir:
+
+- preguntas provenientes de múltiples módulos;
+- número configurable de preguntas;
+- orden aleatorio;
+- opciones aleatorias cuando corresponda;
+- puntuación final;
+- historial de intentos.
+
+El contenido del examen puede estar definido explícitamente mediante JSON.
+
+---
+
+# 19. IndexedDB
+
+Diseñar stores apropiados.
+
+Como mínimo considerar:
+
+```text
+flashcardProgress
+quizAttempts
+examAttempts
+settings
+```
+
+Ejemplo conceptual:
+
+```text
+flashcardProgress
+
+certificationId
+moduleId
+flashcardId
+confidence
+reviewCount
+lastReviewed
+nextReview
+```
+
+Evitar duplicar contenido académico dentro de IndexedDB salvo que sea necesario para funcionamiento offline.
+
+---
+
+# 20. Backup
+
+Implementar:
+
+```text
+Exportar progreso
+```
+
+Debe generar:
+
+```text
+study-progress.json
+```
+
+Implementar también:
+
+```text
+Importar progreso
+```
+
+Validar el archivo antes de importarlo.
+
+Nunca sobrescribir datos válidos sin confirmación.
+
+Incluir:
+
+```text
+schemaVersion
+exportedAt
+applicationVersion
+progress
+quizAttempts
+examAttempts
+settings
+```
+
+---
+
+# 21. PWA
+
+Implementar correctamente:
+
+```text
+manifest.webmanifest
+service worker
+offline cache
+installability
+icons
+```
+
+La aplicación debe poder abrirse sin conexión después de haberse utilizado previamente.
+
+El Service Worker debe manejar correctamente actualizaciones de contenido.
+
+No permitir que un caché antiguo deje permanentemente módulos desactualizados.
+
+Definir estrategia de versionado/cache invalidation.
+
+---
+
+# 22. Experiencia móvil
+
+La aplicación se utilizará frecuentemente desde teléfono.
+
+Priorizar:
+
+- botones grandes;
+- buena legibilidad;
+- interacción táctil;
+- navegación sencilla;
+- evitar interfaces saturadas;
+- funcionamiento portrait;
+- flashcards fáciles de utilizar con una mano.
+
+Evitar depender de hover.
+
+---
+
+# 23. Diseño visual
+
+Crear una interfaz moderna y minimalista.
+
+Inspiración conceptual:
+
+```text
+Notion
++
+Anki
++
+Dashboard moderno
+```
+
+No copiar visualmente estas aplicaciones.
+
+Usar:
+
+- cards;
+- progress bars;
+- badges;
+- tipografía clara;
+- buen contraste;
+- whitespace;
+- diseño responsive.
+
+Implementar:
+
+```text
+Light Mode
+Dark Mode
+```
+
+La preferencia puede guardarse localmente.
+
+---
+
+# 24. Validación de contenido
+
+Los archivos JSON son críticos.
+
+Crear validadores para:
+
+```text
+catalog.json
+manifest.json
+module.json
+exam.json
+```
+
+Si existe un error, NO romper toda la aplicación.
+
+Mostrar un error comprensible.
+
+Ejemplo:
+
+```text
+No se pudo cargar:
+
+modules/03-s3.json
+
+Error:
+flashcards[17].answer is required
+```
+
+Registrar detalles técnicos en consola.
+
+---
+
+# 25. IDs
+
+Todos los elementos deben utilizar IDs estables.
+
+Ejemplos:
+
+```text
+certificationId
+aws-saa
+
+moduleId
+iam
+
+flashcardId
+iam-001
+
+questionId
+iam-q001
+```
+
+Nunca utilizar el índice de un array como identificador persistente.
+
+---
+
+# 26. Versionado
+
+Todos los formatos deben soportar:
+
+```json
+{
+  "schemaVersion": "1.0"
+}
+```
+
+Diseñar la arquitectura pensando en futuras versiones:
+
+```text
+1.0
+1.1
+2.0
+```
+
+Si la aplicación encuentra una versión incompatible debe informar claramente al usuario.
+
+---
+
+# 27. Seguridad
+
+Aunque no exista backend:
+
+- escapar correctamente contenido mostrado;
+- evitar insertar HTML arbitrario proveniente del JSON;
+- evitar `innerHTML` cuando sea innecesario;
+- validar archivos importados;
+- manejar JSON corrupto;
+- no ejecutar JavaScript proveniente del contenido;
+- implementar Content Security Policy compatible con la arquitectura.
+
+---
+
+# 28. Accesibilidad
+
+Considerar:
+
+- navegación mediante teclado;
+- ARIA cuando corresponda;
+- contraste;
+- focus states;
+- labels;
+- botones semánticos;
+- soporte básico para lectores de pantalla.
+
+---
+
+# 29. Testing
+
+Crear pruebas para al menos:
+
+```text
+Content Loader
+JSON validation
+Progress calculation
+Spaced repetition
+Quiz scoring
+Exam scoring
+Import/export
+Version validation
+```
+
+Crear contenido de ejemplo para pruebas.
+
+---
+
+# 30. Documentación
+
+Crear un README que explique:
+
+```text
+Qué es Study App
+
+Cómo ejecutar localmente
+
+Cómo agregar certificaciones
+
+Cómo agregar módulos
+
+Cómo crear flashcards
+
+Cómo crear quizzes
+
+Cómo crear exámenes
+
+Cómo validar JSON
+
+Cómo exportar/importar progreso
+
+Cómo instalar como PWA
+
+Cómo desplegar en AWS
+```
+
+---
+
+# 31. AWS deployment
+
+Preparar documentación para desplegar estáticamente utilizando:
+
+```text
+Route 53
+      |
+      v
+CloudFront
+      |
+      v
+S3
+      |
+      +--> App
+      |
+      +--> JSON content
+```
+
+HTTPS debe manejarse mediante:
+
+```text
+AWS Certificate Manager
+```
+
+No implementar recursos AWS todavía salvo que sea necesario.
+
+Primero garantizar funcionamiento local.
+
+---
+
+# 32. Filosofía del sistema
+
+La regla más importante del proyecto es:
+
+```text
+EL CÓDIGO NO CONOCE LAS CERTIFICACIONES.
+```
+
+El código conoce solamente el:
+
+```text
+Study Content Schema
+```
+
+Por lo tanto:
+
+```text
+Nueva certificación
+        |
+        v
+Nuevo JSON
+        |
+        v
+Actualizar catalog.json
+        |
+        v
+Aparece automáticamente
+```
+
+Nunca:
+
+```text
+Nueva certificación
+        |
+        v
+Modificar JavaScript
+```
+
+---
+
+# 33. Compatibilidad con contenido generado por IA
+
+El sistema debe estar especialmente diseñado para que una IA pueda generar contenido.
+
+En el futuro se utilizarán prompts como:
+
+```text
+Genera el módulo IAM para AWS Solutions Architect
+utilizando Study Content Schema v1.
+```
+
+El resultado debe poder guardarse directamente como:
+
+```text
+/content/aws-saa/modules/01-iam.json
+```
+
+y funcionar sin modificar código.
+
+Por este motivo el schema debe ser:
+
+- estricto;
+- documentado;
+- estable;
+- fácil de validar;
+- fácil de generar mediante IA.
+
+---
+
+# 34. Arquitectura extensible
+
+Preparar la arquitectura para que en versiones futuras puedan agregarse, sin rediseñar completamente la aplicación:
+
+```text
+Cloud sync
+Cognito
+DynamoDB
+S3 private storage
+Multi-user
+AI flashcard generation
+AI quiz generation
+Study recommendations
+Notifications
+Study streaks
+Gamification
+```
+
+NO implementar estas funciones en el MVP.
+
+Solo evitar decisiones arquitectónicas que las hagan difíciles posteriormente.
+
+---
+
+# 35. Entregables técnicos
+
+Antes de implementar, genera:
+
+## A. Requirements
+
+Separar en:
+
+```text
+Functional Requirements
+Non-Functional Requirements
+Technical Requirements
+PWA Requirements
+Offline Requirements
+Content Requirements
+```
+
+## B. Architecture
+
+Explicar:
+
+```text
+Application Architecture
+Content Architecture
+Storage Architecture
+Offline Architecture
+Navigation Architecture
+```
+
+## C. Data Models
+
+Definir:
+
+```text
+Catalog
+Certification Manifest
+Module
+Flashcard
+Quiz
+Question
+Exam
+Progress
+ExamAttempt
+QuizAttempt
+Settings
+```
+
+## D. JSON Schema
+
+Crear los JSON Schema necesarios.
+
+## E. IndexedDB Schema
+
+Documentar:
+
+```text
+database
+version
+object stores
+indexes
+keys
+migration strategy
+```
+
+## F. Component Design
+
+Definir responsabilidades de cada componente.
+
+## G. Tasks
+
+Generar un plan de implementación dividido en tareas pequeñas y verificables.
+
+---
+
+# 36. Estrategia de implementación
+
+NO intentes construir toda la aplicación en un solo cambio.
+
+Trabajar incrementalmente.
+
+Orden recomendado:
+
+```text
+PHASE 1
+Project skeleton
+
+PHASE 2
+JSON schemas
+
+PHASE 3
+Content loader
+
+PHASE 4
+Catalog / certifications
+
+PHASE 5
+Module navigation
+
+PHASE 6
+Flashcards
+
+PHASE 7
+IndexedDB progress
+
+PHASE 8
+Spaced repetition
+
+PHASE 9
+Quizzes
+
+PHASE 10
+Final exams
+
+PHASE 11
+Dashboard statistics
+
+PHASE 12
+Import/export
+
+PHASE 13
+PWA/offline
+
+PHASE 14
+Responsive UI
+
+PHASE 15
+Testing
+
+PHASE 16
+Documentation
+
+PHASE 17
+AWS deployment documentation
+```
+
+Cada fase debe dejar la aplicación en estado funcional.
+
+---
+
+# 37. Criterios de aceptación principales
+
+El MVP se considera terminado cuando:
+
+1. La aplicación funciona localmente.
+
+2. `catalog.json` determina qué certificaciones aparecen.
+
+3. Cada certificación utiliza su propio `manifest.json`.
+
+4. Los módulos se cargan dinámicamente.
+
+5. Agregar un módulo JSON no requiere modificar JavaScript.
+
+6. Las flashcards funcionan correctamente.
+
+7. El usuario puede evaluar:
+
+```text
+No sabía
+Difícil
+Bien
+Fácil
+```
+
+8. El progreso queda almacenado en IndexedDB.
+
+9. Al cerrar y abrir el navegador el progreso permanece.
+
+10. Los quizzes funcionan.
+
+11. Los exámenes funcionan.
+
+12. Se calculan estadísticas.
+
+13. Existe repetición espaciada.
+
+14. El usuario puede exportar su progreso.
+
+15. El usuario puede importar su progreso.
+
+16. La aplicación funciona offline.
+
+17. La aplicación puede instalarse como PWA.
+
+18. Funciona correctamente en móvil.
+
+19. Funciona correctamente en desktop.
+
+20. Los JSON son validados.
+
+21. Un JSON incorrecto no rompe toda la aplicación.
+
+22. Existe documentación para agregar contenido.
+
+23. Existe documentación para desplegar en AWS S3 + CloudFront.
+
+---
+
+# 38. Instrucciones de trabajo
+
+Primero analiza completamente esta especificación.
+
+No escribas inmediatamente toda la aplicación.
+
+Sigue este proceso:
+
+```text
+1. Analizar requisitos
+2. Identificar riesgos o contradicciones
+3. Proponer arquitectura final
+4. Definir modelos
+5. Definir Study Content Schema v1
+6. Definir IndexedDB schema
+7. Generar tasks
+8. Implementar incrementalmente
+9. Ejecutar pruebas después de cada fase
+10. Documentar decisiones importantes
+```
+
+Si encuentras una decisión que pueda generar deuda técnica significativa, detente y explica:
+
+```text
+Problema
+Impacto
+Alternativas
+Recomendación
+```
+
+No agregues complejidad innecesaria.
+
+Prioriza:
+
+```text
+simplicidad
+mantenibilidad
+portabilidad
+offline-first
+mobile-first
+contenido desacoplado
+mínimas dependencias
+```
+
+---
+
+# 39. Resultado esperado
+
+Al finalizar quiero poder hacer esto:
+
+```text
+1. Pedir a una IA:
+
+   "Genera una certificación de Terraform
+    usando Study Content Schema v1"
+
+2. Recibir archivos JSON.
+
+3. Copiarlos a:
+
+   /content/terraform/
+
+4. Agregar la certificación a:
+
+   catalog.json
+
+5. Abrir Study App.
+
+6. Ver automáticamente:
+
+   Terraform Associate
+
+7. Entrar.
+
+8. Estudiar flashcards.
+
+9. Realizar quizzes.
+
+10. Presentar examen.
+
+11. Cerrar la aplicación.
+
+12. Abrirla posteriormente.
+
+13. Continuar exactamente desde mi progreso anterior.
+```
+
+Ese flujo debe funcionar **sin modificar el código fuente de Study App**.
+
+---
+
+# 40. Comienza
+
+Comienza ahora únicamente con:
+
+1. análisis de arquitectura;
+2. requirements;
+3. estructura final del proyecto;
+4. Study Content Schema v1;
+5. diseño de IndexedDB;
+6. plan de tareas.
+
+**No implementes todavía todo el código.**
+
+Primero quiero revisar y aprobar la especificación técnica antes de iniciar la implementación

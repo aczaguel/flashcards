@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "aws-saa",
+  "language": "es-MX",
+  "module": {
+    "id": "iam",
+    "order": 1,
+    "name": "Identity and Access Management",
+    "description": "Conceptos fundamentales de IAM en AWS: usuarios, grupos, roles y políticas",
+    "estimatedMinutes": 45
+  },
+  "flashcards": [
+    {
+      "id": "iam-001",
+      "question": "¿Qué es IAM?",
+      "answer": "Identity and Access Management. Servicio global de AWS para gestionar identidades y controlar el acceso a los recursos.",
+      "explanation": "IAM es gratuito y global (no está vinculado a una región). Permite crear usuarios, grupos, roles y políticas para controlar quién puede hacer qué en AWS.",
+      "difficulty": "basic",
+      "tags": ["iam", "seguridad", "global"]
+    },
+    {
+      "id": "iam-002",
+      "question": "¿Cuáles son los cuatro tipos de identidades en IAM?",
+      "answer": "Usuarios, Grupos, Roles y Políticas (Policies).",
+      "explanation": "Usuarios: personas o servicios con credenciales permanentes. Grupos: colecciones de usuarios. Roles: identidades temporales asumibles por entidades. Políticas: documentos JSON que definen permisos.",
+      "difficulty": "basic",
+      "tags": ["iam", "usuarios", "grupos", "roles"]
+    },
+    {
+      "id": "iam-003",
+      "question": "¿Cuál es la diferencia entre un usuario IAM y un rol IAM?",
+      "answer": "Un usuario IAM tiene credenciales permanentes (password + access keys). Un rol IAM proporciona credenciales temporales y puede ser asumido por usuarios, servicios u otras cuentas AWS.",
+      "explanation": "Los roles son preferibles para aplicaciones y servicios porque sus credenciales rotan automáticamente. Los usuarios se usan principalmente para personas.",
+      "difficulty": "intermediate",
+      "tags": ["iam", "usuarios", "roles", "credenciales"]
+    },
+    {
+      "id": "iam-004",
+      "question": "¿Qué es el principio de mínimo privilegio (Least Privilege)?",
+      "answer": "Otorgar únicamente los permisos estrictamente necesarios para realizar una tarea, ni más ni menos.",
+      "explanation": "Es una práctica fundamental de seguridad en AWS. Comenzar sin permisos y agregar solo los necesarios reduce la superficie de ataque.",
+      "difficulty": "basic",
+      "tags": ["iam", "seguridad", "principios", "best-practices"]
+    },
+    {
+      "id": "iam-005",
+      "question": "¿Qué es una política IAM (IAM Policy)?",
+      "answer": "Un documento JSON que define permisos. Especifica qué acciones están permitidas o denegadas sobre qué recursos.",
+      "explanation": "Estructura básica: { Effect: Allow/Deny, Action: [...], Resource: [...] }. Las políticas se adjuntan a usuarios, grupos o roles.",
+      "difficulty": "basic",
+      "tags": ["iam", "politicas", "json"]
+    },
+    {
+      "id": "iam-006",
+      "question": "¿Qué es MFA en el contexto de AWS IAM?",
+      "answer": "Multi-Factor Authentication. Agrega una segunda capa de seguridad al requerir un código temporal además de la contraseña.",
+      "explanation": "AWS recomienda habilitar MFA en el usuario root y en usuarios con privilegios altos. Soporta dispositivos virtuales (Google Authenticator), físicos y U2F.",
+      "difficulty": "basic",
+      "tags": ["iam", "mfa", "seguridad"]
+    },
+    {
+      "id": "iam-007",
+      "question": "¿Qué son las Access Keys en IAM?",
+      "answer": "Credenciales de larga duración compuestas por un Access Key ID y un Secret Access Key, usadas para acceso programático a AWS (CLI, SDK, API).",
+      "explanation": "No deben compartirse ni committearse en código. Si se comprometen, deben revocarse inmediatamente. Nunca usar las access keys del root.",
+      "difficulty": "intermediate",
+      "tags": ["iam", "credenciales", "cli", "seguridad"]
+    },
+    {
+      "id": "iam-008",
+      "question": "¿Cuándo se debe usar el usuario root de AWS?",
+      "answer": "Solo para tareas que requieren acceso root exclusivo: configurar la cuenta por primera vez, cambiar el plan de soporte, cerrar la cuenta o restaurar acceso de administrador.",
+      "explanation": "El usuario root tiene acceso total e irrevocable. Para operaciones diarias, siempre usar usuarios IAM con los permisos mínimos necesarios.",
+      "difficulty": "basic",
+      "tags": ["iam", "root", "seguridad", "best-practices"]
+    },
+    {
+      "id": "iam-009",
+      "question": "¿Qué es IAM Identity Center (antes AWS SSO)?",
+      "answer": "Servicio que permite gestionar el acceso de múltiples cuentas AWS y aplicaciones de negocio desde un punto central, con Single Sign-On.",
+      "explanation": "Es la forma recomendada de gestionar acceso en organizaciones multi-cuenta. Soporta integración con proveedores de identidad externos (Active Directory, Okta, etc.).",
+      "difficulty": "advanced",
+      "tags": ["iam", "sso", "organizaciones", "multi-cuenta"]
+    },
+    {
+      "id": "iam-010",
+      "question": "¿Qué es una política de recursos (Resource-based Policy) y en qué se diferencia de una Identity-based Policy?",
+      "answer": "Una Resource-based Policy se adjunta directamente a un recurso (como un bucket S3) y especifica quién puede acceder. Una Identity-based Policy se adjunta a una identidad (usuario, grupo, rol) y especifica qué puede hacer.",
+      "explanation": "Ejemplo de Resource-based Policy: política de bucket S3 que permite acceso a otra cuenta. Ambos tipos pueden coexistir y AWS evalúa ambos para determinar el acceso efectivo.",
+      "difficulty": "advanced",
+      "tags": ["iam", "politicas", "s3", "permisos"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "iam-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la función principal de IAM en AWS?",
+        "options": [
+          { "id": "a", "text": "Administrar identidades y controlar el acceso a los recursos de AWS" },
+          { "id": "b", "text": "Almacenar objetos en la nube" },
+          { "id": "c", "text": "Crear y gestionar redes privadas virtuales" },
+          { "id": "d", "text": "Monitorear el rendimiento de las aplicaciones" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "IAM (Identity and Access Management) es el servicio de AWS para gestionar quién puede autenticarse y qué está autorizado a hacer dentro de una cuenta AWS.",
+        "tags": ["iam"]
+      },
+      {
+        "id": "iam-q002",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son tipos de identidades en IAM? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "Usuarios" },
+          { "id": "b", "text": "Grupos" },
+          { "id": "c", "text": "Buckets" },
+          { "id": "d", "text": "Roles" },
+          { "id": "e", "text": "Instancias" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "IAM maneja cuatro tipos de identidades: Usuarios, Grupos, Roles y Políticas. Los buckets pertenecen a S3 y las instancias a EC2.",
+        "tags": ["iam", "identidades"]
+      },
+      {
+        "id": "iam-q003",
+        "type": "true-false",
+        "question": "El usuario root de AWS debe usarse para las operaciones diarias de administración.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "El usuario root no debe usarse para operaciones diarias. Tiene acceso total e irrestricto. Se recomienda crear usuarios IAM con permisos específicos para las tareas del día a día.",
+        "tags": ["iam", "root", "best-practices"]
+      },
+      {
+        "id": "iam-q004",
+        "type": "single-choice",
+        "question": "Una empresa necesita que una aplicación en EC2 acceda a objetos de S3 sin almacenar credenciales. ¿Cuál es la solución correcta?",
+        "options": [
+          { "id": "a", "text": "Crear un usuario IAM y almacenar sus access keys como variables de entorno en EC2" },
+          { "id": "b", "text": "Asignar un rol IAM a la instancia EC2 con los permisos necesarios sobre S3" },
+          { "id": "c", "text": "Hardcodear el Access Key ID y Secret Access Key en el código de la aplicación" },
+          { "id": "d", "text": "Hacer el bucket S3 público para que la instancia pueda acceder sin autenticación" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los roles IAM asignados a instancias EC2 proveen credenciales temporales de forma automática a través del Instance Metadata Service. Es la práctica recomendada: no hay credenciales que gestionar ni que puedan filtrarse.",
+        "tags": ["iam", "ec2", "s3", "roles", "best-practices"]
+      },
+      {
+        "id": "iam-q005",
+        "type": "single-choice",
+        "question": "¿Qué principio de seguridad establece que se deben otorgar solo los permisos mínimos necesarios?",
+        "options": [
+          { "id": "a", "text": "Principio de seguridad por oscuridad" },
+          { "id": "b", "text": "Principio de defensa en profundidad" },
+          { "id": "c", "text": "Principio de mínimo privilegio" },
+          { "id": "d", "text": "Principio de separación de responsabilidades" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "El principio de mínimo privilegio (Least Privilege) es un pilar fundamental de seguridad en AWS. Consiste en comenzar sin permisos y agregar solo los estrictamente necesarios para cada tarea.",
+        "tags": ["iam", "seguridad", "principios"]
+      },
+      {
+        "id": "iam-q006",
+        "type": "true-false",
+        "question": "IAM es un servicio regional; las políticas y usuarios creados solo están disponibles en la región donde se crearon.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "IAM es un servicio global. Los usuarios, grupos, roles y políticas creados están disponibles en todas las regiones de AWS automáticamente.",
+        "tags": ["iam", "global", "regiones"]
+      },
+      {
+        "id": "iam-q007",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes son buenas prácticas de seguridad en IAM? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Habilitar MFA en el usuario root" },
+          { "id": "b", "text": "Compartir access keys entre desarrolladores para facilitar el trabajo" },
+          { "id": "c", "text": "Crear usuarios IAM individuales en lugar de compartir credenciales" },
+          { "id": "d", "text": "Aplicar el principio de mínimo privilegio" },
+          { "id": "e", "text": "Rotar las access keys periódicamente" }
+        ],
+        "correctAnswers": ["a", "c", "d", "e"],
+        "explanation": "Las buenas prácticas incluyen: MFA en root, usuarios individuales, mínimo privilegio y rotación de credenciales. Compartir access keys es una mala práctica que compromete la trazabilidad y la seguridad.",
+        "tags": ["iam", "seguridad", "best-practices"]
+      },
+      {
+        "id": "iam-q008",
+        "type": "single-choice",
+        "question": "¿Qué componente de IAM se utiliza para definir permisos mediante un documento JSON?",
+        "options": [
+          { "id": "a", "text": "Rol" },
+          { "id": "b", "text": "Grupo" },
+          { "id": "c", "text": "Política (Policy)" },
+          { "id": "d", "text": "Usuario" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Las políticas IAM son documentos JSON que definen permisos. Especifican Effect (Allow/Deny), Action (qué operaciones) y Resource (sobre qué recursos). Se adjuntan a usuarios, grupos o roles.",
+        "tags": ["iam", "politicas"]
+      }
+    ]
+  }
+}

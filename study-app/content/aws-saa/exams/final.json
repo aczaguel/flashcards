@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "1.0",
+  "type": "exam",
+  "certificationId": "aws-saa",
+  "language": "es-MX",
+  "exam": {
+    "id": "final",
+    "name": "Examen Final SAA-C03",
+    "description": "Simulacro del examen oficial AWS Solutions Architect Associate. Cubre IAM, EC2 y principios de arquitectura.",
+    "passingScore": 72,
+    "timeLimit": 30,
+    "shuffleQuestions": true,
+    "shuffleOptions": true
+  },
+  "questions": [
+    {
+      "id": "exam-q001",
+      "type": "single-choice",
+      "moduleId": "iam",
+      "question": "Una empresa necesita que una aplicación corriendo en EC2 acceda a objetos de S3 sin almacenar credenciales en el código. ¿Cuál es la solución recomendada?",
+      "options": [
+        { "id": "a", "text": "Crear un usuario IAM y almacenar sus access keys como variables de entorno" },
+        { "id": "b", "text": "Asignar un rol IAM a la instancia EC2 con los permisos necesarios" },
+        { "id": "c", "text": "Hacer el bucket S3 público de lectura" },
+        { "id": "d", "text": "Hardcodear las credenciales en el código fuente" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Los roles IAM asignados a instancias EC2 proveen credenciales temporales automáticamente sin necesidad de gestionar credenciales manualmente.",
+      "tags": ["iam", "ec2", "s3", "seguridad"]
+    },
+    {
+      "id": "exam-q002",
+      "type": "single-choice",
+      "moduleId": "iam",
+      "question": "¿Cuál es el principio de seguridad que establece otorgar únicamente los permisos mínimos necesarios?",
+      "options": [
+        { "id": "a", "text": "Principio de defensa en profundidad" },
+        { "id": "b", "text": "Principio de mínimo privilegio" },
+        { "id": "c", "text": "Principio de seguridad por oscuridad" },
+        { "id": "d", "text": "Principio de separación de responsabilidades" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "El principio de mínimo privilegio establece que cada entidad debe tener solo los permisos estrictamente necesarios para realizar su tarea.",
+      "tags": ["iam", "seguridad", "principios"]
+    },
+    {
+      "id": "exam-q003",
+      "type": "true-false",
+      "moduleId": "iam",
+      "question": "IAM es un servicio regional: los usuarios y roles creados solo están disponibles en la región donde fueron creados.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["false"],
+      "explanation": "IAM es un servicio global. Los usuarios, grupos, roles y políticas están disponibles en todas las regiones automáticamente.",
+      "tags": ["iam", "global"]
+    },
+    {
+      "id": "exam-q004",
+      "type": "multiple-choice",
+      "moduleId": "iam",
+      "question": "¿Cuáles de las siguientes son buenas prácticas de seguridad en IAM? (selecciona todas las correctas)",
+      "options": [
+        { "id": "a", "text": "Habilitar MFA en el usuario root" },
+        { "id": "b", "text": "Compartir access keys entre equipos" },
+        { "id": "c", "text": "Aplicar el principio de mínimo privilegio" },
+        { "id": "d", "text": "Rotar las access keys periódicamente" },
+        { "id": "e", "text": "Usar el usuario root para operaciones diarias" }
+      ],
+      "correctAnswers": ["a", "c", "d"],
+      "explanation": "Compartir access keys y usar el usuario root para operaciones diarias son malas prácticas de seguridad.",
+      "tags": ["iam", "seguridad", "best-practices"]
+    },
+    {
+      "id": "exam-q005",
+      "type": "single-choice",
+      "moduleId": "ec2",
+      "question": "¿Cuál es la opción de compra de EC2 más económica para una carga de trabajo tolerante a interrupciones?",
+      "options": [
+        { "id": "a", "text": "On-Demand" },
+        { "id": "b", "text": "Reserved Instance 3 años" },
+        { "id": "c", "text": "Spot Instance" },
+        { "id": "d", "text": "Dedicated Host" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "Las Spot Instances ofrecen descuentos de más del 90% usando capacidad no utilizada de AWS. Son ideales para cargas tolerantes a interrupciones.",
+      "tags": ["ec2", "costos", "spot"]
+    },
+    {
+      "id": "exam-q006",
+      "type": "single-choice",
+      "moduleId": "ec2",
+      "question": "Una empresa tiene una aplicación web con tráfico variable impredecible. ¿Qué tipo de instancia EC2 recomendarías?",
+      "options": [
+        { "id": "a", "text": "Reserved Instance (1 año)" },
+        { "id": "b", "text": "On-Demand" },
+        { "id": "c", "text": "Spot Instance" },
+        { "id": "d", "text": "Dedicated Instance" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "On-Demand es ideal para cargas impredecibles ya que cobra por uso sin compromisos. Reserved es mejor para cargas predecibles y constantes.",
+      "tags": ["ec2", "pricing"]
+    },
+    {
+      "id": "exam-q007",
+      "type": "true-false",
+      "moduleId": "ec2",
+      "question": "Los datos almacenados en Amazon EBS persisten independientemente del ciclo de vida de la instancia EC2.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["true"],
+      "explanation": "EBS (Elastic Block Store) es almacenamiento persistente. Los datos sobreviven al stop/start de la instancia. El Instance Store, en cambio, es efímero.",
+      "tags": ["ec2", "ebs", "almacenamiento"]
+    },
+    {
+      "id": "exam-q008",
+      "type": "single-choice",
+      "moduleId": "ec2",
+      "question": "¿Qué tipo de instancia EC2 elegiría para una aplicación que requiere alto rendimiento de memoria para procesamiento de datos en tiempo real?",
+      "options": [
+        { "id": "a", "text": "Compute Optimized (c6g)" },
+        { "id": "b", "text": "General Purpose (t3)" },
+        { "id": "c", "text": "Memory Optimized (r6g)" },
+        { "id": "d", "text": "Storage Optimized (i3)" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "Las instancias Memory Optimized (familia r) están diseñadas para cargas que requieren alta memoria RAM, como bases de datos en memoria o procesamiento de datos a gran escala.",
+      "tags": ["ec2", "instancias", "tipos"]
+    },
+    {
+      "id": "exam-q009",
+      "type": "multiple-choice",
+      "moduleId": "ec2",
+      "question": "¿Cuáles de los siguientes son tipos de almacenamiento disponibles para instancias EC2? (selecciona todos los correctos)",
+      "options": [
+        { "id": "a", "text": "Amazon EBS" },
+        { "id": "b", "text": "Instance Store" },
+        { "id": "c", "text": "Amazon RDS" },
+        { "id": "d", "text": "Amazon EFS" }
+      ],
+      "correctAnswers": ["a", "b", "d"],
+      "explanation": "EBS, Instance Store y EFS pueden conectarse a instancias EC2. RDS es un servicio de base de datos gestionado, no almacenamiento de bloques o archivos para EC2.",
+      "tags": ["ec2", "almacenamiento", "ebs", "efs"]
+    },
+    {
+      "id": "exam-q010",
+      "type": "single-choice",
+      "moduleId": "iam",
+      "question": "Una política IAM con Effect: 'Deny' sobre una acción específica, ¿puede ser sobreescrita por una política con Effect: 'Allow' para el mismo usuario?",
+      "options": [
+        { "id": "a", "text": "Sí, Allow siempre tiene prioridad sobre Deny" },
+        { "id": "b", "text": "No, Deny explícito siempre tiene prioridad sobre Allow" },
+        { "id": "c", "text": "Depende del orden en que se evalúan las políticas" },
+        { "id": "d", "text": "Solo si la política Allow es una política administrada por AWS" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "En IAM, un Deny explícito siempre tiene prioridad sobre cualquier Allow. Esta es una regla fundamental de la evaluación de políticas IAM.",
+      "tags": ["iam", "politicas", "permisos"]
+    },
+    {
+      "id": "exam-q011",
+      "type": "single-choice",
+      "moduleId": "ec2",
+      "question": "¿Qué es un Security Group en AWS EC2?",
+      "options": [
+        { "id": "a", "text": "Un firewall stateless que actúa a nivel de subred" },
+        { "id": "b", "text": "Un firewall stateful que actúa a nivel de instancia" },
+        { "id": "c", "text": "Una política IAM para controlar acceso a EC2" },
+        { "id": "d", "text": "Un grupo de usuarios con permisos similares" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Los Security Groups son firewalls stateful a nivel de instancia. Las respuestas al tráfico permitido se permiten automáticamente. Solo permiten reglas Allow.",
+      "tags": ["ec2", "seguridad", "red"]
+    },
+    {
+      "id": "exam-q012",
+      "type": "true-false",
+      "moduleId": "iam",
+      "question": "Un rol IAM puede ser asumido por servicios de AWS como EC2 o Lambda para obtener permisos temporales.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["true"],
+      "explanation": "Los roles IAM están diseñados para ser asumidos por entidades como servicios AWS, usuarios de otras cuentas o identidades federadas. EC2 y Lambda los usan frecuentemente.",
+      "tags": ["iam", "roles"]
+    }
+  ]
+}

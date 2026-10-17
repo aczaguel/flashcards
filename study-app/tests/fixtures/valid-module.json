@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "aws-saa",
+  "language": "es-MX",
+  "module": {
+    "id": "iam",
+    "order": 1,
+    "name": "Identity and Access Management",
+    "description": "Conceptos fundamentales de IAM en AWS",
+    "estimatedMinutes": 45
+  },
+  "flashcards": [
+    {
+      "id": "iam-001",
+      "question": "¿Qué es IAM?",
+      "answer": "Identity and Access Management. Servicio de AWS para gestionar identidades y permisos.",
+      "explanation": "IAM permite crear usuarios, grupos, roles y políticas.",
+      "difficulty": "basic",
+      "tags": ["iam", "security"]
+    },
+    {
+      "id": "iam-002",
+      "question": "¿Cuál es la diferencia entre un usuario IAM y un rol IAM?",
+      "answer": "Un usuario IAM tiene credenciales permanentes. Un rol IAM tiene credenciales temporales y es asumido por entidades.",
+      "difficulty": "intermediate",
+      "tags": ["iam", "roles"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "iam-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la función principal de IAM?",
+        "options": [
+          { "id": "a", "text": "Administrar identidades y permisos" },
+          { "id": "b", "text": "Almacenar objetos en la nube" },
+          { "id": "c", "text": "Crear redes privadas virtuales" },
+          { "id": "d", "text": "Monitorear el rendimiento" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "IAM controla la autenticación y autorización en AWS."
+      },
+      {
+        "id": "iam-q002",
+        "type": "multiple-choice",
+        "question": "¿Cuáles son tipos de identidades en IAM?",
+        "options": [
+          { "id": "a", "text": "Usuarios" },
+          { "id": "b", "text": "Grupos" },
+          { "id": "c", "text": "Buckets" },
+          { "id": "d", "text": "Roles" }
+        ],
+        "correctAnswers": ["a", "b", "d"],
+        "explanation": "IAM maneja usuarios, grupos y roles."
+      },
+      {
+        "id": "iam-q003",
+        "type": "true-false",
+        "question": "El usuario root de AWS debe usarse para operaciones diarias.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "El usuario root no debe usarse para operaciones diarias."
+      }
+    ]
+  }
+}

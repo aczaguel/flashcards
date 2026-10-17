@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "certifications": [
+    {
+      "id": "aws-saa",
+      "name": "AWS Solutions Architect Associate",
+      "description": "Preparación para el examen SAA-C03 en español",
+      "icon": "☁️",
+      "manifest": "aws-saa/manifest.json",
+      "enabled": true
+    },
+    {
+      "id": "terraform-associate",
+      "name": "HashiCorp Terraform Associate",
+      "description": "Preparación para el examen Terraform Associate 003 (TA-003)",
+      "icon": "🏗️",
+      "manifest": "terraform-associate/manifest.json",
+      "enabled": true
+    }
+  ]
+}

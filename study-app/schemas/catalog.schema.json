@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "study-app/catalog.schema.json",
+  "title": "Study App Catalog",
+  "description": "Registro de todas las certificaciones disponibles en Study App",
+  "type": "object",
+  "required": ["schemaVersion", "certifications"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Versión del schema. Actualmente: 1.0"
+    },
+    "certifications": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "manifest", "enabled"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "Identificador único en kebab-case. Ej: aws-saa"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "icon": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "Emoji o código de icono (opcional)"
+          },
+          "manifest": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Ruta relativa a manifest.json desde /content/. Ej: aws-saa/manifest.json"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "false oculta la certificación del dashboard"
+          }
+        }
+      }
+    }
+  }
+}

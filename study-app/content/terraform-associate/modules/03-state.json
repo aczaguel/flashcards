@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "state",
+    "order": 3,
+    "name": "State Management",
+    "description": "State local y remoto, backends, bloqueo de estado y operaciones de gestión",
+    "estimatedMinutes": 50
+  },
+  "flashcards": [
+    {
+      "id": "state-001",
+      "question": "¿Qué es el Terraform state?",
+      "answer": "Archivo (terraform.tfstate) que registra el estado actual de la infraestructura gestionada. Mapea los recursos definidos en la configuración con los objetos reales en el proveedor.",
+      "explanation": "El state permite a Terraform saber qué infraestructura existe, detectar diferencias con la configuración actual y planificar cambios. Sin él, Terraform no sabría qué gestiona.",
+      "difficulty": "basic",
+      "tags": ["state", "fundamentos"]
+    },
+    {
+      "id": "state-002",
+      "question": "¿Por qué no se debe commitear `terraform.tfstate` al control de versiones?",
+      "answer": "Porque puede contener información sensible (contraseñas, claves), se desincroniza fácilmente en equipos y puede causar conflictos de merge. Debe usarse un backend remoto.",
+      "explanation": "El state local es problemático en equipos: dos personas hacen apply simultáneo y el state queda corrupto. La solución es remote state (S3, Terraform Cloud, etc.) con locking.",
+      "difficulty": "intermediate",
+      "tags": ["state", "seguridad", "equipo"]
+    },
+    {
+      "id": "state-003",
+      "question": "¿Qué es un backend de Terraform?",
+      "answer": "Configuración que define dónde se almacena y cómo se accede al state file. Puede ser local (por defecto) o remoto (S3, GCS, Azure Blob, Terraform Cloud).",
+      "explanation": "El backend se configura en el bloque terraform { backend { ... } }. Los backends remotos permiten trabajo en equipo, locking y almacenamiento seguro del state.",
+      "difficulty": "intermediate",
+      "tags": ["state", "backend"]
+    },
+    {
+      "id": "state-004",
+      "question": "¿Qué es el state locking?",
+      "answer": "Mecanismo que impide que múltiples operaciones de Terraform modifiquen el state simultáneamente, evitando corrupción del state.",
+      "explanation": "Cuando usas S3 como backend, el locking se implementa con DynamoDB. Terraform Cloud tiene locking nativo. Si un apply falla a mitad y el lock no se libera, se puede forzar con terraform force-unlock.",
+      "difficulty": "intermediate",
+      "tags": ["state", "locking", "equipo"]
+    },
+    {
+      "id": "state-005",
+      "question": "¿Qué hace `terraform state list`?",
+      "answer": "Lista todos los recursos actualmente rastreados en el state de Terraform.",
+      "explanation": "Útil para ver qué recursos gestiona Terraform. Muestra los resource addresses como aws_instance.web, module.vpc.aws_vpc.main, etc.",
+      "difficulty": "basic",
+      "tags": ["state", "comandos"]
+    },
+    {
+      "id": "state-006",
+      "question": "¿Para qué sirve `terraform state mv`?",
+      "answer": "Mueve un recurso a una nueva dirección en el state sin destruirlo ni recrearlo. Útil al refactorizar configuración.",
+      "explanation": "Ejemplo: si renombras aws_instance.old a aws_instance.new en tu .tf, debes ejecutar terraform state mv aws_instance.old aws_instance.new para que Terraform no destruya y recree el recurso.",
+      "difficulty": "advanced",
+      "tags": ["state", "comandos", "refactoring"]
+    },
+    {
+      "id": "state-007",
+      "question": "¿Qué hace `terraform import`?",
+      "answer": "Importa al state de Terraform un recurso que ya existe en el proveedor pero que no fue creado por Terraform, permitiendo que Terraform lo gestione.",
+      "explanation": "Útil para migrar infraestructura existente a Terraform. Requiere escribir primero el bloque resource en la configuración. Desde Terraform 1.5+ existe import block para importaciones declarativas.",
+      "difficulty": "intermediate",
+      "tags": ["state", "import"]
+    },
+    {
+      "id": "state-008",
+      "question": "¿Qué son los workspaces de Terraform?",
+      "answer": "Entornos aislados dentro del mismo backend que mantienen states separados. Permiten gestionar múltiples entornos (dev, staging, prod) con la misma configuración.",
+      "explanation": "El workspace por defecto se llama 'default'. Se puede crear otro con terraform workspace new dev. Cada workspace tiene su propio state file. Son útiles pero tienen limitaciones para entornos complejos.",
+      "difficulty": "intermediate",
+      "tags": ["state", "workspaces"]
+    },
+    {
+      "id": "state-009",
+      "question": "¿Qué hace `terraform refresh`?",
+      "answer": "Actualiza el state de Terraform consultando el estado real de la infraestructura en el proveedor, sin aplicar cambios.",
+      "explanation": "Reconcilia el state local con la realidad del proveedor. En versiones modernas, terraform plan ya incluye un refresh implícito. Se puede deshabilitar con -refresh=false.",
+      "difficulty": "intermediate",
+      "tags": ["state", "comandos"]
+    },
+    {
+      "id": "state-010",
+      "question": "¿Qué hace `terraform state rm`?",
+      "answer": "Elimina un recurso del state de Terraform sin destruir el objeto real en el proveedor. Terraform deja de gestionar ese recurso.",
+      "explanation": "Útil cuando quieres que Terraform deje de gestionar un recurso sin eliminarlo. El recurso sigue existiendo en el proveedor pero Terraform ya no lo rastrea.",
+      "difficulty": "advanced",
+      "tags": ["state", "comandos"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "state-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es el nombre del archivo de state local que crea Terraform por defecto?",
+        "options": [
+          { "id": "a", "text": "terraform.state" },
+          { "id": "b", "text": "terraform.tfstate" },
+          { "id": "c", "text": ".terraform/state.json" },
+          { "id": "d", "text": "state.tf" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Terraform crea terraform.tfstate en el directorio de trabajo. También existe terraform.tfstate.backup como respaldo del estado anterior.",
+        "tags": ["state"]
+      },
+      {
+        "id": "state-q002",
+        "type": "multiple-choice",
+        "question": "¿Por qué razones NO se recomienda usar state local en equipos? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Puede contener datos sensibles que se commitearían al repo" },
+          { "id": "b", "text": "No soporta el lenguaje HCL" },
+          { "id": "c", "text": "Dos usuarios pueden modificar el state simultáneamente causando corrupción" },
+          { "id": "d", "text": "No hay mecanismo de locking para evitar operaciones concurrentes" }
+        ],
+        "correctAnswers": ["a", "c", "d"],
+        "explanation": "El state local tiene tres problemas principales en equipos: datos sensibles en el repo, sin locking (operaciones concurrentes corrompen el state) y sin compartición. HCL no está relacionado con el state.",
+        "tags": ["state", "equipo"]
+      },
+      {
+        "id": "state-q003",
+        "type": "single-choice",
+        "question": "¿Qué servicio de AWS se usa comúnmente para implementar state locking cuando el backend es S3?",
+        "options": [
+          { "id": "a", "text": "SQS" },
+          { "id": "b", "text": "ElastiCache" },
+          { "id": "c", "text": "DynamoDB" },
+          { "id": "d", "text": "RDS" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "El backend S3 de Terraform usa DynamoDB para implementar locking. Se crea una tabla DynamoDB con una clave de partición llamada 'LockID'.",
+        "tags": ["state", "locking", "aws"]
+      },
+      {
+        "id": "state-q004",
+        "type": "single-choice",
+        "question": "¿Qué comando usarías para ver todos los recursos que Terraform está rastreando actualmente?",
+        "options": [
+          { "id": "a", "text": "terraform show" },
+          { "id": "b", "text": "terraform state list" },
+          { "id": "c", "text": "terraform list" },
+          { "id": "d", "text": "terraform resources" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform state list muestra todos los recursos en el state actual con su dirección completa.",
+        "tags": ["state", "comandos"]
+      },
+      {
+        "id": "state-q005",
+        "type": "true-false",
+        "question": "Al renombrar un recurso en la configuración .tf, Terraform destruirá el recurso antiguo y creará uno nuevo a menos que uses `terraform state mv`.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Terraform no detecta renombramientos automáticamente. Si renombras aws_instance.old a aws_instance.new, plan mostrará -aws_instance.old y +aws_instance.new. Usa terraform state mv para evitarlo.",
+        "tags": ["state", "refactoring"]
+      },
+      {
+        "id": "state-q006",
+        "type": "single-choice",
+        "question": "¿Qué hace `terraform state rm aws_instance.web`?",
+        "options": [
+          { "id": "a", "text": "Destruye la instancia EC2 en AWS" },
+          { "id": "b", "text": "Elimina el recurso del state pero la instancia sigue existiendo en AWS" },
+          { "id": "c", "text": "Mueve el recurso a otro workspace" },
+          { "id": "d", "text": "Elimina el archivo terraform.tfstate" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform state rm elimina el recurso del rastreo de Terraform, pero el recurso real (la instancia EC2) sigue existiendo en AWS. Terraform simplemente deja de gestionarlo.",
+        "tags": ["state", "comandos"]
+      },
+      {
+        "id": "state-q007",
+        "type": "single-choice",
+        "question": "¿Cuál es el workspace de Terraform que existe por defecto?",
+        "options": [
+          { "id": "a", "text": "main" },
+          { "id": "b", "text": "production" },
+          { "id": "c", "text": "default" },
+          { "id": "d", "text": "global" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "El workspace que crea Terraform por defecto se llama 'default'. Puedes crear nuevos con terraform workspace new <nombre>.",
+        "tags": ["state", "workspaces"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "core-concepts",
+    "order": 1,
+    "name": "Conceptos Fundamentales",
+    "description": "Infraestructura como código, flujo de trabajo de Terraform y comandos básicos",
+    "estimatedMinutes": 45
+  },
+  "flashcards": [
+    {
+      "id": "core-concepts-001",
+      "question": "¿Qué es Infraestructura como Código (IaC)?",
+      "answer": "Práctica de gestionar y provisionar infraestructura mediante archivos de configuración legibles por máquinas, en lugar de procesos manuales.",
+      "explanation": "IaC permite versionar, reutilizar y compartir configuraciones de infraestructura igual que el código de software. Terraform es una herramienta de IaC declarativa.",
+      "difficulty": "basic",
+      "tags": ["iac", "fundamentos"]
+    },
+    {
+      "id": "core-concepts-002",
+      "question": "¿Cuál es el flujo de trabajo principal de Terraform?",
+      "answer": "Write → Plan → Apply. Se escribe la configuración, se revisa el plan de cambios, y se aplican los cambios.",
+      "explanation": "Write: definir recursos en archivos .tf. Plan: terraform plan muestra qué se creará/modificará/destruirá. Apply: terraform apply ejecuta los cambios.",
+      "difficulty": "basic",
+      "tags": ["workflow", "fundamentos"]
+    },
+    {
+      "id": "core-concepts-003",
+      "question": "¿Qué hace el comando `terraform init`?",
+      "answer": "Inicializa el directorio de trabajo: descarga providers requeridos, configura el backend y prepara el entorno.",
+      "explanation": "Debe ejecutarse antes de cualquier otro comando cuando se crea un nuevo proyecto o se cambia la configuración. Descarga los plugins de providers al directorio .terraform/.",
+      "difficulty": "basic",
+      "tags": ["comandos", "init"]
+    },
+    {
+      "id": "core-concepts-004",
+      "question": "¿Qué diferencia hay entre `terraform plan` y `terraform apply`?",
+      "answer": "`terraform plan` muestra los cambios que se realizarán sin ejecutarlos. `terraform apply` ejecuta esos cambios realmente.",
+      "explanation": "Plan es un paso de revisión seguro. Apply puede ejecutarse con -auto-approve para saltar la confirmación, pero no es recomendable en producción.",
+      "difficulty": "basic",
+      "tags": ["comandos", "plan", "apply"]
+    },
+    {
+      "id": "core-concepts-005",
+      "question": "¿Qué hace `terraform destroy`?",
+      "answer": "Elimina toda la infraestructura gestionada por la configuración de Terraform actual.",
+      "explanation": "Es equivalente a terraform apply con todos los recursos marcados para destrucción. Solicita confirmación antes de ejecutar, a menos que se use -auto-approve.",
+      "difficulty": "basic",
+      "tags": ["comandos", "destroy"]
+    },
+    {
+      "id": "core-concepts-006",
+      "question": "¿Qué es el lenguaje HCL?",
+      "answer": "HashiCorp Configuration Language. Lenguaje declarativo diseñado por HashiCorp para escribir configuraciones de Terraform de forma legible para humanos.",
+      "explanation": "HCL combina la legibilidad de YAML con la expresividad de un lenguaje de programación. Los archivos Terraform usan la extensión .tf. También acepta JSON como alternativa.",
+      "difficulty": "basic",
+      "tags": ["hcl", "lenguaje"]
+    },
+    {
+      "id": "core-concepts-007",
+      "question": "¿Qué es la diferencia entre IaC declarativa e imperativa?",
+      "answer": "Declarativa: describes el estado deseado final (qué quieres). Imperativa: describes los pasos exactos para llegar al estado (cómo hacerlo). Terraform es declarativa.",
+      "explanation": "Con Terraform dices 'quiero 3 instancias EC2' y Terraform determina cómo crearlas. Con scripts imperatives como Bash defines paso a paso cómo crearlas.",
+      "difficulty": "intermediate",
+      "tags": ["iac", "declarativo", "imperativo"]
+    },
+    {
+      "id": "core-concepts-008",
+      "question": "¿Qué hace `terraform fmt`?",
+      "answer": "Formatea automáticamente los archivos de configuración .tf al estilo canónico de Terraform.",
+      "explanation": "Usa espaciado e indentación estándar. Es recomendable ejecutarlo antes de hacer commit. Con -check retorna un código de error si hay archivos sin formatear.",
+      "difficulty": "basic",
+      "tags": ["comandos", "fmt"]
+    },
+    {
+      "id": "core-concepts-009",
+      "question": "¿Qué hace `terraform validate`?",
+      "answer": "Verifica que la configuración de Terraform es sintácticamente válida y consistente internamente, sin acceder a servicios remotos.",
+      "explanation": "Útil para detectar errores tipográficos y referencias inválidas antes de hacer plan o apply. No valida credenciales ni disponibilidad de recursos.",
+      "difficulty": "basic",
+      "tags": ["comandos", "validate"]
+    },
+    {
+      "id": "core-concepts-010",
+      "question": "¿Qué significa que Terraform sea idempotente?",
+      "answer": "Ejecutar terraform apply múltiples veces con la misma configuración produce siempre el mismo resultado final, sin crear duplicados ni fallar.",
+      "explanation": "Si la infraestructura ya está en el estado deseado, terraform apply no hace nada. Solo aplica los cambios necesarios para alcanzar el estado declarado.",
+      "difficulty": "intermediate",
+      "tags": ["fundamentos", "idempotente"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "core-concepts-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es el orden correcto del flujo de trabajo de Terraform?",
+        "options": [
+          { "id": "a", "text": "Plan → Write → Apply" },
+          { "id": "b", "text": "Write → Apply → Plan" },
+          { "id": "c", "text": "Write → Plan → Apply" },
+          { "id": "d", "text": "Init → Write → Plan" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "El flujo estándar es: Write (escribir configuración), Plan (revisar cambios), Apply (ejecutar cambios).",
+        "tags": ["workflow"]
+      },
+      {
+        "id": "core-concepts-q002",
+        "type": "single-choice",
+        "question": "¿Qué comando debes ejecutar PRIMERO en un nuevo proyecto de Terraform?",
+        "options": [
+          { "id": "a", "text": "terraform plan" },
+          { "id": "b", "text": "terraform apply" },
+          { "id": "c", "text": "terraform init" },
+          { "id": "d", "text": "terraform validate" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "terraform init debe ejecutarse primero para descargar providers y preparar el directorio de trabajo.",
+        "tags": ["comandos", "init"]
+      },
+      {
+        "id": "core-concepts-q003",
+        "type": "true-false",
+        "question": "Terraform es una herramienta de IaC imperativa: defines paso a paso cómo crear la infraestructura.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "Terraform es declarativa: describes el estado final deseado y Terraform determina cómo alcanzarlo.",
+        "tags": ["iac", "declarativo"]
+      },
+      {
+        "id": "core-concepts-q004",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son comandos válidos de Terraform? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "terraform init" },
+          { "id": "b", "text": "terraform build" },
+          { "id": "c", "text": "terraform plan" },
+          { "id": "d", "text": "terraform fmt" },
+          { "id": "e", "text": "terraform compile" }
+        ],
+        "correctAnswers": ["a", "c", "d"],
+        "explanation": "Los comandos válidos son init, plan, apply, destroy, fmt, validate, entre otros. 'build' y 'compile' no existen en Terraform.",
+        "tags": ["comandos"]
+      },
+      {
+        "id": "core-concepts-q005",
+        "type": "single-choice",
+        "question": "¿Qué hace `terraform plan` con los cambios que detecta?",
+        "options": [
+          { "id": "a", "text": "Los aplica inmediatamente sin confirmación" },
+          { "id": "b", "text": "Los muestra en pantalla sin ejecutarlos" },
+          { "id": "c", "text": "Los guarda en el state file" },
+          { "id": "d", "text": "Los envía al provider para su validación" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "terraform plan es solo un paso de revisión. Muestra qué se creará (+), modificará (~) o destruirá (-), pero no ejecuta nada.",
+        "tags": ["comandos", "plan"]
+      },
+      {
+        "id": "core-concepts-q006",
+        "type": "true-false",
+        "question": "Ejecutar terraform apply dos veces con la misma configuración sin cambios crea recursos duplicados.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "Terraform es idempotente. Si la infraestructura ya está en el estado deseado, la segunda ejecución de apply no hace nada.",
+        "tags": ["fundamentos", "idempotente"]
+      },
+      {
+        "id": "core-concepts-q007",
+        "type": "single-choice",
+        "question": "¿Cuál es la extensión de los archivos de configuración de Terraform?",
+        "options": [
+          { "id": "a", "text": ".yaml" },
+          { "id": "b", "text": ".tf" },
+          { "id": "c", "text": ".hcl" },
+          { "id": "d", "text": ".json" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los archivos de configuración de Terraform usan la extensión .tf (aunque .tf.json también es válido para configuración en formato JSON).",
+        "tags": ["hcl", "archivos"]
+      }
+    ]
+  }
+}

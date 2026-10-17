@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "aws-saa",
+  "language": "es-MX",
+  "module": {
+    "id": "ec2",
+    "order": 2,
+    "name": "Elastic Compute Cloud",
+    "description": "Instancias, tipos, AMIs, grupos de seguridad, almacenamiento y opciones de compra en AWS EC2",
+    "estimatedMinutes": 60
+  },
+  "flashcards": [
+    {
+      "id": "ec2-001",
+      "question": "¿Qué es Amazon EC2?",
+      "answer": "Elastic Compute Cloud. Servicio de AWS que proporciona capacidad de cómputo escalable en la nube mediante máquinas virtuales llamadas instancias.",
+      "explanation": "EC2 es uno de los servicios más fundamentales de AWS. Permite lanzar servidores virtuales, configurar su seguridad y redes, y gestionar el almacenamiento.",
+      "difficulty": "basic",
+      "tags": ["ec2", "compute"]
+    },
+    {
+      "id": "ec2-002",
+      "question": "¿Qué es una AMI (Amazon Machine Image)?",
+      "answer": "Una plantilla que contiene el sistema operativo, aplicaciones y configuración necesarios para lanzar una instancia EC2.",
+      "explanation": "Las AMIs pueden ser provistas por AWS, la comunidad, el AWS Marketplace, o creadas por el usuario. Permiten lanzar instancias idénticas de forma rápida.",
+      "difficulty": "basic",
+      "tags": ["ec2", "ami"]
+    },
+    {
+      "id": "ec2-003",
+      "question": "¿Cuáles son las principales familias de tipos de instancias EC2?",
+      "answer": "General Purpose (t, m), Compute Optimized (c), Memory Optimized (r, x), Storage Optimized (i, d), Accelerated Computing (p, g).",
+      "explanation": "Cada familia está optimizada para un caso de uso específico. Ej: t3.micro es general purpose y económica; c6g es compute optimized para cargas de CPU intensivas.",
+      "difficulty": "intermediate",
+      "tags": ["ec2", "instancias", "tipos"]
+    },
+    {
+      "id": "ec2-004",
+      "question": "¿Qué es un Security Group en EC2?",
+      "answer": "Un firewall virtual que controla el tráfico entrante y saliente de las instancias EC2. Actúa a nivel de instancia.",
+      "explanation": "Los Security Groups son stateful: si permites tráfico entrante, la respuesta saliente se permite automáticamente. Solo pueden especificar reglas de ALLOW, no de DENY.",
+      "difficulty": "basic",
+      "tags": ["ec2", "seguridad", "red"]
+    },
+    {
+      "id": "ec2-005",
+      "question": "¿Cuáles son las opciones de compra de instancias EC2?",
+      "answer": "On-Demand (pago por uso), Reserved (1 o 3 años con descuento), Spot (capacidad no utilizada con descuento > 90%), Dedicated Hosts y Savings Plans.",
+      "explanation": "On-Demand es la opción más flexible pero más cara. Reserved ofrece hasta 75% de descuento para cargas predecibles. Spot es ideal para cargas tolerantes a interrupciones.",
+      "difficulty": "intermediate",
+      "tags": ["ec2", "costos", "pricing"]
+    },
+    {
+      "id": "ec2-006",
+      "question": "¿Qué es el Instance Store vs Amazon EBS?",
+      "answer": "Instance Store es almacenamiento efímero físicamente conectado al host. EBS (Elastic Block Store) es almacenamiento persistente en red que puede desconectarse y reconectarse.",
+      "explanation": "Los datos en Instance Store se pierden cuando la instancia se detiene o termina. EBS persiste independientemente del ciclo de vida de la instancia. EBS es la opción recomendada para datos importantes.",
+      "difficulty": "intermediate",
+      "tags": ["ec2", "almacenamiento", "ebs"]
+    },
+    {
+      "id": "ec2-007",
+      "question": "¿Qué es un Elastic IP Address?",
+      "answer": "Una dirección IPv4 estática y pública asignada a tu cuenta de AWS que puede reasignarse entre instancias EC2.",
+      "explanation": "A diferencia de las IPs públicas asignadas automáticamente (que cambian al reiniciar), las Elastic IPs persisten hasta que las liberas. AWS cobra por Elastic IPs no asociadas a una instancia en ejecución.",
+      "difficulty": "basic",
+      "tags": ["ec2", "red", "ip"]
+    },
+    {
+      "id": "ec2-008",
+      "question": "¿Qué son los EC2 User Data?",
+      "answer": "Scripts que se ejecutan automáticamente cuando se lanza una instancia EC2 por primera vez. Usados para configurar y bootstrapear la instancia.",
+      "explanation": "Los User Data se ejecutan una vez al lanzamiento con privilegios de root. Son ideales para instalar software, descargar código o inicializar configuraciones.",
+      "difficulty": "intermediate",
+      "tags": ["ec2", "automatizacion"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 75,
+    "questions": [
+      {
+        "id": "ec2-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la opción de compra de EC2 más adecuada para una carga de trabajo predecible que durará 3 años?",
+        "options": [
+          { "id": "a", "text": "On-Demand" },
+          { "id": "b", "text": "Reserved Instance (3 años)" },
+          { "id": "c", "text": "Spot Instance" },
+          { "id": "d", "text": "Dedicated Host" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Las Reserved Instances con plazo de 3 años ofrecen el mayor descuento (hasta 75%) para cargas predecibles y de larga duración.",
+        "tags": ["ec2", "pricing"]
+      },
+      {
+        "id": "ec2-q002",
+        "type": "true-false",
+        "question": "Los datos almacenados en Instance Store persisten cuando la instancia EC2 se detiene.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["false"],
+        "explanation": "El Instance Store es almacenamiento efímero. Los datos se pierden cuando la instancia se detiene, termina o falla el hardware subyacente.",
+        "tags": ["ec2", "almacenamiento"]
+      },
+      {
+        "id": "ec2-q003",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia principal entre un Security Group y una Network ACL?",
+        "options": [
+          { "id": "a", "text": "Security Groups actúan a nivel de subred; NACLs a nivel de instancia" },
+          { "id": "b", "text": "Security Groups son stateful; NACLs son stateless" },
+          { "id": "c", "text": "Security Groups solo permiten IPv6; NACLs solo IPv4" },
+          { "id": "d", "text": "No hay diferencia, son equivalentes" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Security Groups son stateful (las respuestas se permiten automáticamente) y actúan a nivel de instancia. Las NACLs son stateless y actúan a nivel de subred.",
+        "tags": ["ec2", "seguridad", "vpc"]
+      },
+      {
+        "id": "ec2-q004",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de las siguientes son familias de tipos de instancias EC2? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "General Purpose (t, m)" },
+          { "id": "b", "text": "Compute Optimized (c)" },
+          { "id": "c", "text": "Network Optimized (n)" },
+          { "id": "d", "text": "Memory Optimized (r, x)" },
+          { "id": "e", "text": "Storage Optimized (i, d)" }
+        ],
+        "correctAnswers": ["a", "b", "d", "e"],
+        "explanation": "Las familias principales son: General Purpose, Compute Optimized, Memory Optimized, Storage Optimized y Accelerated Computing. No existe una familia 'Network Optimized' como tal.",
+        "tags": ["ec2", "instancias"]
+      },
+      {
+        "id": "ec2-q005",
+        "type": "single-choice",
+        "question": "Una empresa tiene una carga de trabajo tolerante a interrupciones que necesita procesamiento durante pocas horas. ¿Cuál es la opción más económica?",
+        "options": [
+          { "id": "a", "text": "On-Demand" },
+          { "id": "b", "text": "Reserved 1 año" },
+          { "id": "c", "text": "Spot Instances" },
+          { "id": "d", "text": "Dedicated Hosts" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Las Spot Instances usan capacidad no utilizada de AWS con descuentos superiores al 90%. Son ideales para cargas tolerantes a interrupciones como batch processing, CI/CD o renderizado.",
+        "tags": ["ec2", "pricing", "spot"]
+      }
+    ]
+  }
+}

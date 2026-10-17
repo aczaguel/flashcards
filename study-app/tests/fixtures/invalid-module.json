@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "type": "study-module",
+  "certificationId": "aws-saa",
+  "language": "es-MX",
+  "module": {
+    "id": "iam",
+    "order": 1,
+    "name": "IAM"
+  },
+  "flashcards": [
+    {
+      "id": "iam-001",
+      "question": "¿Qué es IAM?"
+    },
+    {
+      "id": "bad_id_format",
+      "question": "Pregunta sin answer",
+      "answer": ""
+    }
+  ],
+  "quiz": {
+    "passingScore": 150,
+    "questions": [
+      {
+        "id": "wrong-format",
+        "type": "unknown-type",
+        "question": "¿Pregunta?",
+        "options": [
+          { "id": "a", "text": "Solo una opción" }
+        ],
+        "correctAnswers": []
+      }
+    ]
+  }
+}

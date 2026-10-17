@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "certificationId": "example-cert",
+  "name": "Certificación de Ejemplo",
+  "description": "Plantilla mínima para crear una nueva certificación en Study App",
+  "language": "es-MX",
+  "totalEstimatedHours": 5,
+  "modules": [
+    {
+      "id": "intro",
+      "order": 1,
+      "name": "Módulo de Introducción",
+      "description": "Conceptos fundamentales",
+      "file": "modules/01-intro.json"
+    }
+  ],
+  "exams": []
+}

@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "1.0",
+  "type": "exam",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "exam": {
+    "id": "final",
+    "name": "Examen Final Terraform Associate 003",
+    "description": "Simulacro del examen oficial TA-003. Cubre conceptos fundamentales, providers, state y recursos.",
+    "passingScore": 70,
+    "timeLimit": 60,
+    "shuffleQuestions": true,
+    "shuffleOptions": true
+  },
+  "questions": [
+    {
+      "id": "exam-q001",
+      "type": "single-choice",
+      "moduleId": "core-concepts",
+      "question": "¿Cuál es el orden correcto del flujo de trabajo de Terraform?",
+      "options": [
+        { "id": "a", "text": "Plan → Write → Apply" },
+        { "id": "b", "text": "Write → Plan → Apply" },
+        { "id": "c", "text": "Init → Apply → Plan" },
+        { "id": "d", "text": "Write → Apply → Destroy" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "El flujo estándar es Write (escribir configuración .tf), Plan (revisar cambios), Apply (ejecutar cambios).",
+      "tags": ["workflow", "fundamentos"]
+    },
+    {
+      "id": "exam-q002",
+      "type": "single-choice",
+      "moduleId": "core-concepts",
+      "question": "¿Qué comando inicializa un directorio de trabajo de Terraform y descarga los providers necesarios?",
+      "options": [
+        { "id": "a", "text": "terraform start" },
+        { "id": "b", "text": "terraform setup" },
+        { "id": "c", "text": "terraform init" },
+        { "id": "d", "text": "terraform plan" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "terraform init es siempre el primer comando a ejecutar. Descarga providers, configura el backend y prepara el directorio de trabajo.",
+      "tags": ["comandos", "init"]
+    },
+    {
+      "id": "exam-q003",
+      "type": "true-false",
+      "moduleId": "core-concepts",
+      "question": "Terraform es una herramienta de IaC declarativa: defines el estado deseado y Terraform determina cómo alcanzarlo.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["true"],
+      "explanation": "Terraform es declarativa. Describes qué infraestructura quieres, no los pasos para crearla. Esto contrasta con herramientas imperativas como scripts Bash.",
+      "tags": ["iac", "declarativo"]
+    },
+    {
+      "id": "exam-q004",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "¿Dónde se deben declarar los providers requeridos y sus versiones en Terraform?",
+      "options": [
+        { "id": "a", "text": "En el bloque `provider { version = ... }`" },
+        { "id": "b", "text": "En el bloque `terraform { required_providers { ... } }`" },
+        { "id": "c", "text": "En el archivo .terraform.lock.hcl manualmente" },
+        { "id": "d", "text": "En variables de entorno TF_PROVIDER_VERSION" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Los providers requeridos y sus constraints de versión se declaran en el bloque terraform { required_providers { } }. Esto garantiza reproducibilidad.",
+      "tags": ["providers", "versiones"]
+    },
+    {
+      "id": "exam-q005",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "¿Qué archivo se debe commitear al control de versiones para garantizar versiones consistentes de providers en el equipo?",
+      "options": [
+        { "id": "a", "text": "terraform.tfstate" },
+        { "id": "b", "text": ".terraform/providers/" },
+        { "id": "c", "text": ".terraform.lock.hcl" },
+        { "id": "d", "text": "terraform.tfvars" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": ".terraform.lock.hcl registra las versiones exactas de los providers. Commitearlo asegura que todo el equipo use las mismas versiones.",
+      "tags": ["providers", "lock"]
+    },
+    {
+      "id": "exam-q006",
+      "type": "single-choice",
+      "moduleId": "providers",
+      "question": "Un provider con constraint de versión `~> 3.0`, ¿qué versiones acepta?",
+      "options": [
+        { "id": "a", "text": "Cualquier versión mayor o igual a 3.0" },
+        { "id": "b", "text": "Exactamente la versión 3.0" },
+        { "id": "c", "text": "Versiones >= 3.0 y < 4.0" },
+        { "id": "d", "text": "Versiones >= 3.0 y < 3.1" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "~> 3.0 acepta versiones >= 3.0 y < 4.0. El major version (3) no puede cambiar, pero sí el minor y patch.",
+      "tags": ["providers", "versiones", "semver"]
+    },
+    {
+      "id": "exam-q007",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Cuál es el nombre del archivo de state que crea Terraform por defecto?",
+      "options": [
+        { "id": "a", "text": "state.tf" },
+        { "id": "b", "text": "terraform.state" },
+        { "id": "c", "text": ".terraform/state.json" },
+        { "id": "d", "text": "terraform.tfstate" }
+      ],
+      "correctAnswers": ["d"],
+      "explanation": "Terraform crea terraform.tfstate en el directorio de trabajo. No debe commitearse al VCS; usa un backend remoto para equipos.",
+      "tags": ["state"]
+    },
+    {
+      "id": "exam-q008",
+      "type": "multiple-choice",
+      "moduleId": "state",
+      "question": "¿Por qué se recomienda usar state remoto en equipos? (selecciona todas las correctas)",
+      "options": [
+        { "id": "a", "text": "Evita commitear datos sensibles al repositorio" },
+        { "id": "b", "text": "Permite hacer terraform destroy más rápido" },
+        { "id": "c", "text": "Proporciona locking para evitar modificaciones concurrentes" },
+        { "id": "d", "text": "Permite que varios miembros del equipo compartan el mismo state" }
+      ],
+      "correctAnswers": ["a", "c", "d"],
+      "explanation": "El state remoto resuelve tres problemas del state local en equipos: datos sensibles en el repo, sin locking (corrupción por acceso concurrente) y sin compartición entre miembros.",
+      "tags": ["state", "equipo"]
+    },
+    {
+      "id": "exam-q009",
+      "type": "single-choice",
+      "moduleId": "state",
+      "question": "¿Qué servicio de AWS proporciona state locking cuando se usa S3 como backend de Terraform?",
+      "options": [
+        { "id": "a", "text": "SQS" },
+        { "id": "b", "text": "DynamoDB" },
+        { "id": "c", "text": "ElastiCache" },
+        { "id": "d", "text": "RDS" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "El backend S3 de Terraform usa una tabla de DynamoDB para implementar locking. La tabla necesita una clave de partición llamada 'LockID'.",
+      "tags": ["state", "locking", "aws"]
+    },
+    {
+      "id": "exam-q010",
+      "type": "true-false",
+      "moduleId": "state",
+      "question": "Si renombras un recurso en tu configuración .tf, Terraform detecta automáticamente el cambio y no destruye ni recrea el recurso.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["false"],
+      "explanation": "Terraform no detecta renombramientos. Verá un recurso eliminado y uno nuevo. Para evitar destrucción/recreación usa terraform state mv o el bloque moved {} (Terraform 1.1+).",
+      "tags": ["state", "refactoring"]
+    },
+    {
+      "id": "exam-q011",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Cómo se referencia una variable de input llamada `instance_type` dentro de una configuración Terraform?",
+      "options": [
+        { "id": "a", "text": "input.instance_type" },
+        { "id": "b", "text": "variable.instance_type" },
+        { "id": "c", "text": "var.instance_type" },
+        { "id": "d", "text": "${instance_type}" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "Las variables de input se referencian con el prefijo var. La sintaxis correcta es var.instance_type.",
+      "tags": ["variables"]
+    },
+    {
+      "id": "exam-q012",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Para qué se usa un `data source` en Terraform?",
+      "options": [
+        { "id": "a", "text": "Para crear nuevos recursos en el proveedor" },
+        { "id": "b", "text": "Para almacenar el state de forma remota" },
+        { "id": "c", "text": "Para leer información de recursos existentes sin modificarlos" },
+        { "id": "d", "text": "Para definir outputs de un módulo" }
+      ],
+      "correctAnswers": ["c"],
+      "explanation": "Los data sources permiten consultar información de recursos existentes (AMIs, VPCs, zonas DNS...) sin crearlos ni modificarlos. Son de solo lectura.",
+      "tags": ["data-sources"]
+    },
+    {
+      "id": "exam-q013",
+      "type": "single-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Por qué `for_each` es generalmente preferible a `count` para crear múltiples recursos?",
+      "options": [
+        { "id": "a", "text": "for_each tiene mejor rendimiento que count" },
+        { "id": "b", "text": "for_each usa claves string estables, evitando recreaciones al eliminar elementos intermedios" },
+        { "id": "c", "text": "count no está disponible en Terraform >= 1.0" },
+        { "id": "d", "text": "for_each consume menos memoria" }
+      ],
+      "correctAnswers": ["b"],
+      "explanation": "Con count, eliminar el elemento 0 de una lista de 3 renumera los demás causando recreaciones. Con for_each, cada elemento tiene una clave estable y solo el elemento eliminado se destruye.",
+      "tags": ["resources", "for_each"]
+    },
+    {
+      "id": "exam-q014",
+      "type": "multiple-choice",
+      "moduleId": "resources-modules",
+      "question": "¿Cuáles son formas válidas de pasar valores a variables de input en Terraform? (selecciona todas las correctas)",
+      "options": [
+        { "id": "a", "text": "Archivo terraform.tfvars" },
+        { "id": "b", "text": "Flag -var en la línea de comandos" },
+        { "id": "c", "text": "Variable de entorno TF_VAR_nombre" },
+        { "id": "d", "text": "Modificando el bloque resource directamente" },
+        { "id": "e", "text": "Archivo *.auto.tfvars" }
+      ],
+      "correctAnswers": ["a", "b", "c", "e"],
+      "explanation": "Se pueden pasar valores por: terraform.tfvars (automático), *.auto.tfvars (automático), -var en CLI y TF_VAR_nombre como variable de entorno. Los bloques resource no son el lugar para valores de variables.",
+      "tags": ["variables", "tfvars"]
+    },
+    {
+      "id": "exam-q015",
+      "type": "true-false",
+      "moduleId": "core-concepts",
+      "question": "Ejecutar `terraform apply` dos veces sin cambios en la configuración destruye y recrea los recursos.",
+      "options": [
+        { "id": "true", "text": "Verdadero" },
+        { "id": "false", "text": "Falso" }
+      ],
+      "correctAnswers": ["false"],
+      "explanation": "Terraform es idempotente. Si la infraestructura ya está en el estado deseado, la segunda ejecución de apply no hace ningún cambio.",
+      "tags": ["fundamentos", "idempotente"]
+    }
+  ]
+}

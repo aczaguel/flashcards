@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "study-app/module.schema.json",
+  "title": "Study Module",
+  "description": "Unidad de estudio con flashcards y quiz — Study Content Schema v1",
+  "type": "object",
+  "required": ["schemaVersion", "type", "certificationId", "language", "module", "flashcards", "quiz"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$"
+    },
+    "type": {
+      "type": "string",
+      "const": "study-module"
+    },
+    "certificationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+      "description": "BCP 47. Ej: es-MX, en-US"
+    },
+    "module": {
+      "type": "object",
+      "required": ["id", "order", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "estimatedMinutes": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "flashcards": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "answer"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+-\\d{3,}$",
+            "description": "Formato: {moduleId}-{NNN}. Ej: iam-001"
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": ["basic", "intermediate", "advanced"]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "maxItems": 10
+          }
+        }
+      }
+    },
+    "quiz": {
+      "type": "object",
+      "required": ["passingScore", "questions"],
+      "additionalProperties": false,
+      "properties": {
+        "passingScore": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Porcentaje mínimo para aprobar. Ej: 80"
+        },
+        "questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/definitions/question" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "question": {
+      "type": "object",
+      "required": ["id", "type", "question", "options", "correctAnswers"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+-q\\d{3,}$",
+          "description": "Formato: {moduleId}-q{NNN}. Ej: iam-q001"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["single-choice", "multiple-choice", "true-false"],
+          "description": "Tipos soportados en v1"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "options": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "required": ["id", "text"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            }
+          }
+        },
+        "correctAnswers": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "IDs de las opciones correctas"
+        },
+        "explanation": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "maxItems": 10
+        }
+      }
+    }
+  }
+}

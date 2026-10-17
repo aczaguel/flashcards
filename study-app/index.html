@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Motor genérico de estudio con flashcards, repetición espaciada, quizzes y exámenes. Funciona offline." />
+
+  <!-- PWA / iOS -->
+  <meta name="theme-color" content="#4F6EF7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Study App" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.svg" />
+
+  <!-- Manifest -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+
+  <!-- CSP — only same-origin resources, no inline scripts -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self';" />
+
+  <!-- CSS — orden: tokens → temas → layout → componentes -->
+  <link rel="stylesheet" href="./assets/css/main.css" />
+  <link rel="stylesheet" href="./assets/css/themes.css" />
+  <link rel="stylesheet" href="./assets/css/layout.css" />
+  <link rel="stylesheet" href="./assets/css/components.css" />
+
+  <title>Study App</title>
+</head>
+<body>
+
+  <!-- Skip link para navegación por teclado -->
+  <a href="#app" class="skip-link">Ir al contenido principal</a>
+
+  <div id="app" role="main" aria-label="Study App">
+    <!-- Pantalla de carga inicial — reemplazada por el router en ms -->
+    <div class="initial-loader" aria-live="polite" aria-label="Cargando Study App…">
+      <div class="initial-loader__logo" aria-hidden="true">📚</div>
+      <div class="initial-loader__spinner" role="status"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/app.js"></script>
+
+</body>
+</html>

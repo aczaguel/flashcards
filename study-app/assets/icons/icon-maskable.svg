@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Maskable: el contenido importante debe estar dentro del círculo de seguridad (80%) -->
+  <rect width="512" height="512" fill="#4F6EF7"/>
+  <text x="256" y="330" font-family="-apple-system, sans-serif" font-size="220" font-weight="bold" fill="white" text-anchor="middle">S</text>
+</svg>

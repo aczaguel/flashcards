@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Node (si se agrega en el futuro)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Terraform (si se agrega en el futuro)
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Credenciales
+*.pem
+*.key
+.env
+.env.*

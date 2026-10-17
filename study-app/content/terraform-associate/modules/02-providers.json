@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "providers",
+    "order": 2,
+    "name": "Providers y Registry",
+    "description": "Providers, Terraform Registry, versiones y configuración de providers",
+    "estimatedMinutes": 40
+  },
+  "flashcards": [
+    {
+      "id": "providers-001",
+      "question": "¿Qué es un Provider en Terraform?",
+      "answer": "Un plugin que permite a Terraform interactuar con APIs de plataformas externas (AWS, Azure, GCP, GitHub, etc.). Traduce las declaraciones HCL en llamadas a la API del proveedor.",
+      "explanation": "Los providers son el puente entre Terraform y los servicios externos. Cada provider expone resources y data sources específicos. Ej: el provider AWS expone aws_instance, aws_s3_bucket, etc.",
+      "difficulty": "basic",
+      "tags": ["providers", "fundamentos"]
+    },
+    {
+      "id": "providers-002",
+      "question": "¿Qué es el Terraform Registry?",
+      "answer": "registry.terraform.io — repositorio público oficial donde se publican y distribuyen providers y módulos de Terraform.",
+      "explanation": "Es el lugar por defecto donde Terraform busca providers. Contiene providers oficiales de HashiCorp (AWS, Azure, GCP), providers verificados de socios y providers de la comunidad.",
+      "difficulty": "basic",
+      "tags": ["registry", "providers"]
+    },
+    {
+      "id": "providers-003",
+      "question": "¿Cómo se configura un provider en Terraform?",
+      "answer": "Con un bloque `provider` en la configuración. Ej: `provider \"aws\" { region = \"us-east-1\" }`",
+      "explanation": "El bloque provider especifica el nombre del provider y sus argumentos de configuración. Puede haber múltiples instancias del mismo provider usando alias.",
+      "difficulty": "basic",
+      "tags": ["providers", "configuracion"]
+    },
+    {
+      "id": "providers-004",
+      "question": "¿Dónde se declaran los providers requeridos en Terraform?",
+      "answer": "En el bloque `terraform { required_providers { ... } }`. Esto especifica el source y la versión requerida de cada provider.",
+      "explanation": "Ejemplo: terraform { required_providers { aws = { source = \"hashicorp/aws\", version = \"~> 5.0\" } } }. Esto asegura reproducibilidad del entorno.",
+      "difficulty": "intermediate",
+      "tags": ["providers", "versiones"]
+    },
+    {
+      "id": "providers-005",
+      "question": "¿Qué significa el constraint de versión `~> 5.0` en un provider?",
+      "answer": "Acepta cualquier versión >= 5.0 y < 6.0. Permite actualizaciones de parche y minor pero no cambios de major version.",
+      "explanation": "Los constraints de versión siguen semver: ~> 5.0 = >=5.0, <6.0. ~> 5.1 = >=5.1, <6.0. >= 5.0 = cualquier versión mayor o igual. = 5.2.1 = exactamente esa versión.",
+      "difficulty": "intermediate",
+      "tags": ["providers", "versiones", "semver"]
+    },
+    {
+      "id": "providers-006",
+      "question": "¿Qué es el archivo `.terraform.lock.hcl`?",
+      "answer": "Archivo de lock que registra las versiones exactas de los providers seleccionados. Garantiza que todos los miembros del equipo usen las mismas versiones.",
+      "explanation": "Se crea automáticamente con terraform init. Debe commitearse al control de versiones para garantizar reproducibilidad. Para actualizarlo: terraform init -upgrade.",
+      "difficulty": "intermediate",
+      "tags": ["providers", "lock", "versiones"]
+    },
+    {
+      "id": "providers-007",
+      "question": "¿Qué son los providers 'tier' en el Terraform Registry?",
+      "answer": "Niveles de soporte: Official (HashiCorp), Partner (empresa verificada), Community (contribuidores externos).",
+      "explanation": "Official: mantenidos por HashiCorp (aws, azure, google). Partner: mantenidos por empresas con acuerdo con HashiCorp (datadog, newrelic). Community: mantenidos por la comunidad.",
+      "difficulty": "intermediate",
+      "tags": ["providers", "registry", "tiers"]
+    },
+    {
+      "id": "providers-008",
+      "question": "¿Para qué sirve el atributo `alias` en un bloque provider?",
+      "answer": "Permite definir múltiples configuraciones del mismo provider. Útil para desplegar en múltiples regiones o cuentas con un mismo provider.",
+      "explanation": "Ejemplo: provider \"aws\" { alias = \"us_east\", region = \"us-east-1\" } y provider \"aws\" { alias = \"eu_west\", region = \"eu-west-1\" }. En los resources se referencia con provider = aws.us_east.",
+      "difficulty": "advanced",
+      "tags": ["providers", "alias", "multi-region"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "providers-q001",
+        "type": "single-choice",
+        "question": "¿Cuál es la URL del registro público oficial de providers de Terraform?",
+        "options": [
+          { "id": "a", "text": "providers.terraform.io" },
+          { "id": "b", "text": "registry.terraform.io" },
+          { "id": "c", "text": "hub.terraform.io" },
+          { "id": "d", "text": "marketplace.hashicorp.com" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "registry.terraform.io es el repositorio oficial donde se publican providers y módulos de Terraform.",
+        "tags": ["registry"]
+      },
+      {
+        "id": "providers-q002",
+        "type": "single-choice",
+        "question": "¿Qué archivo debe commitearse al control de versiones para garantizar versiones consistentes de providers en el equipo?",
+        "options": [
+          { "id": "a", "text": ".terraform/providers/" },
+          { "id": "b", "text": "terraform.tfstate" },
+          { "id": "c", "text": ".terraform.lock.hcl" },
+          { "id": "d", "text": "providers.tf" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": ".terraform.lock.hcl registra las versiones exactas de providers. Commitearlo garantiza que todo el equipo use las mismas versiones.",
+        "tags": ["providers", "lock"]
+      },
+      {
+        "id": "providers-q003",
+        "type": "single-choice",
+        "question": "Un provider con constraint `~> 4.2` en Terraform, ¿qué versiones acepta?",
+        "options": [
+          { "id": "a", "text": "Cualquier versión >= 4.2" },
+          { "id": "b", "text": "Versiones >= 4.2 y < 5.0" },
+          { "id": "c", "text": "Exactamente la versión 4.2" },
+          { "id": "d", "text": "Versiones >= 4.0 y < 5.0" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "~> 4.2 permite versiones >= 4.2 y < 5.0 (el major version no puede cambiar). Equivale a >= 4.2, < 5.0.",
+        "tags": ["providers", "versiones"]
+      },
+      {
+        "id": "providers-q004",
+        "type": "multiple-choice",
+        "question": "¿Cuáles de los siguientes son tiers de providers en el Terraform Registry? (selecciona todos los correctos)",
+        "options": [
+          { "id": "a", "text": "Official" },
+          { "id": "b", "text": "Enterprise" },
+          { "id": "c", "text": "Partner" },
+          { "id": "d", "text": "Community" },
+          { "id": "e", "text": "Premium" }
+        ],
+        "correctAnswers": ["a", "c", "d"],
+        "explanation": "Los tres tiers son Official (HashiCorp), Partner (empresas verificadas) y Community (contribuidores externos). Enterprise y Premium no son tiers del registry.",
+        "tags": ["registry", "tiers"]
+      },
+      {
+        "id": "providers-q005",
+        "type": "true-false",
+        "question": "Es posible usar múltiples configuraciones del mismo provider (por ejemplo, para distintas regiones de AWS) en un mismo proyecto de Terraform.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Usando el atributo `alias` en el bloque provider, puedes tener múltiples instancias del mismo provider con diferentes configuraciones.",
+        "tags": ["providers", "alias"]
+      },
+      {
+        "id": "providers-q006",
+        "type": "single-choice",
+        "question": "¿Qué comando actualiza las versiones de providers ignorando el archivo lock?",
+        "options": [
+          { "id": "a", "text": "terraform init -update" },
+          { "id": "b", "text": "terraform upgrade" },
+          { "id": "c", "text": "terraform init -upgrade" },
+          { "id": "d", "text": "terraform providers update" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "terraform init -upgrade recalcula las versiones de providers permitidas por los constraints y actualiza el archivo .terraform.lock.hcl.",
+        "tags": ["providers", "comandos"]
+      }
+    ]
+  }
+}

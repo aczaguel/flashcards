@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "certificationId": "terraform-associate",
+  "name": "HashiCorp Terraform Associate",
+  "description": "Preparación para el examen Terraform Associate 003 (TA-003). Cubre IaC, providers, state, recursos y módulos.",
+  "language": "es-MX",
+  "totalEstimatedHours": 20,
+  "modules": [
+    {
+      "id": "core-concepts",
+      "order": 1,
+      "name": "Conceptos Fundamentales",
+      "description": "Infraestructura como código, flujo de trabajo de Terraform y comandos básicos",
+      "file": "modules/01-core-concepts.json"
+    },
+    {
+      "id": "providers",
+      "order": 2,
+      "name": "Providers y Registry",
+      "description": "Providers, Terraform Registry, versiones y configuración",
+      "file": "modules/02-providers.json"
+    },
+    {
+      "id": "state",
+      "order": 3,
+      "name": "State Management",
+      "description": "State local y remoto, backends, bloqueo y gestión del estado",
+      "file": "modules/03-state.json"
+    },
+    {
+      "id": "resources-modules",
+      "order": 4,
+      "name": "Resources, Variables y Módulos",
+      "description": "Recursos, variables de entrada/salida, locals, data sources y módulos reutilizables",
+      "file": "modules/04-resources-modules.json"
+    }
+  ],
+  "exams": [
+    {
+      "id": "final",
+      "name": "Examen Final Terraform Associate 003",
+      "description": "Simulacro del examen oficial TA-003",
+      "file": "exams/final.json"
+    }
+  ]
+}

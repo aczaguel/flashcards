@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "1.0",
+  "contentVersion": "1.0.0",
+  "type": "study-module",
+  "certificationId": "terraform-associate",
+  "language": "es-MX",
+  "module": {
+    "id": "resources-modules",
+    "order": 4,
+    "name": "Resources, Variables y Módulos",
+    "description": "Recursos, variables de entrada/salida, locals, data sources y módulos reutilizables",
+    "estimatedMinutes": 55
+  },
+  "flashcards": [
+    {
+      "id": "resources-modules-001",
+      "question": "¿Cuál es la sintaxis básica de un resource en Terraform?",
+      "answer": "`resource \"tipo_recurso\" \"nombre_local\" { argumentos }`. Ej: resource \"aws_instance\" \"web\" { ami = \"ami-12345\" instance_type = \"t3.micro\" }",
+      "explanation": "El tipo_recurso incluye el nombre del provider (aws_) y el tipo de recurso (instance). El nombre_local es un identificador único dentro de la configuración. Se referencia como aws_instance.web.",
+      "difficulty": "basic",
+      "tags": ["resources", "hcl"]
+    },
+    {
+      "id": "resources-modules-002",
+      "question": "¿Qué es una `variable` de input en Terraform?",
+      "answer": "Parámetro de entrada que hace la configuración reutilizable y configurable. Se declara con bloque `variable` y se usa como `var.nombre`.",
+      "explanation": "Ejemplo: variable \"region\" { type = string, default = \"us-east-1\", description = \"AWS region\" }. Se puede pasar por CLI (-var), archivo .tfvars o variable de entorno TF_VAR_region.",
+      "difficulty": "basic",
+      "tags": ["variables", "inputs"]
+    },
+    {
+      "id": "resources-modules-003",
+      "question": "¿Qué es un `output` en Terraform?",
+      "answer": "Valor exportado de la configuración que se muestra tras apply. Permite exponer información de los recursos creados o pasar datos entre módulos.",
+      "explanation": "Ejemplo: output \"instance_ip\" { value = aws_instance.web.public_ip }. Los outputs se ven con terraform output. Entre módulos: module.vpc.vpc_id accede al output vpc_id del módulo vpc.",
+      "difficulty": "basic",
+      "tags": ["outputs"]
+    },
+    {
+      "id": "resources-modules-004",
+      "question": "¿Qué son los `locals` en Terraform?",
+      "answer": "Valores calculados internamente dentro de la configuración. Permiten reutilizar expresiones sin repetirlas. Se declaran con `locals { }` y se usan como `local.nombre`.",
+      "explanation": "Ejemplo: locals { name_prefix = \"${var.env}-app\" }. Los locals no pueden pasarse desde fuera como las variables; son internos a la configuración o módulo.",
+      "difficulty": "intermediate",
+      "tags": ["locals"]
+    },
+    {
+      "id": "resources-modules-005",
+      "question": "¿Qué es un `data source` en Terraform?",
+      "answer": "Permite leer información de recursos existentes que no gestiona la configuración actual. Usa bloque `data`. Ej: consultar una AMI de AWS por nombre.",
+      "explanation": "Ejemplo: data \"aws_ami\" \"ubuntu\" { most_recent = true, filter { name = \"name\", values = [\"ubuntu-*\"] } }. Se referencia como data.aws_ami.ubuntu.id. No crea ni modifica recursos.",
+      "difficulty": "intermediate",
+      "tags": ["data-sources"]
+    },
+    {
+      "id": "resources-modules-006",
+      "question": "¿Qué es un módulo en Terraform?",
+      "answer": "Contenedor de recursos reutilizables agrupados en una carpeta. Permite abstraer y reutilizar configuraciones complejas con una interfaz de variables y outputs.",
+      "explanation": "El directorio raíz es el 'root module'. Módulos hijos se llaman con bloque `module`. Pueden venir del filesystem local, Terraform Registry o Git.",
+      "difficulty": "intermediate",
+      "tags": ["modulos"]
+    },
+    {
+      "id": "resources-modules-007",
+      "question": "¿Qué son las `depends_on` en un resource?",
+      "answer": "Meta-argumento que fuerza una dependencia explícita entre recursos cuando Terraform no puede detectarla automáticamente por referencias.",
+      "explanation": "Terraform detecta dependencias implícitas cuando un recurso usa el valor de otro (aws_instance.web.id). depends_on es para dependencias que no se expresan a través de valores.",
+      "difficulty": "intermediate",
+      "tags": ["resources", "dependencias"]
+    },
+    {
+      "id": "resources-modules-008",
+      "question": "¿Qué hace el meta-argumento `count` en un resource?",
+      "answer": "Crea múltiples instancias del mismo recurso. `count = 3` crea 3 instancias accesibles como recurso[0], recurso[1], recurso[2].",
+      "explanation": "Ejemplo: resource \"aws_instance\" \"web\" { count = 3, ami = var.ami }. Se accede con aws_instance.web[0].id. Para listas dinámicas, for_each es más flexible que count.",
+      "difficulty": "intermediate",
+      "tags": ["resources", "count"]
+    },
+    {
+      "id": "resources-modules-009",
+      "question": "¿Qué diferencia hay entre `count` y `for_each`?",
+      "answer": "`count` crea recursos por número (índice entero). `for_each` itera sobre un map o set, identificando recursos por clave (string) — más estable ante cambios en la colección.",
+      "explanation": "Con count, si eliminas el elemento 0 de una lista de 3, los elementos 1 y 2 se renumeran causando destrucción/recreación. Con for_each, cada elemento se identifica por clave y es estable.",
+      "difficulty": "advanced",
+      "tags": ["resources", "count", "for_each"]
+    },
+    {
+      "id": "resources-modules-010",
+      "question": "¿Qué son los archivos `.tfvars`?",
+      "answer": "Archivos que contienen valores de variables de input. Terraform carga automáticamente `terraform.tfvars` y `*.auto.tfvars`. Otros se pasan con `-var-file=nombre.tfvars`.",
+      "explanation": "Ejemplo: terraform.tfvars contiene: region = \"us-west-2\", instance_type = \"t3.small\". Permiten tener distintos valores para distintos entornos sin modificar la configuración principal.",
+      "difficulty": "intermediate",
+      "tags": ["variables", "tfvars"]
+    }
+  ],
+  "quiz": {
+    "passingScore": 80,
+    "questions": [
+      {
+        "id": "resources-modules-q001",
+        "type": "single-choice",
+        "question": "¿Cómo se referencia el valor de una variable de input llamada `region` en Terraform?",
+        "options": [
+          { "id": "a", "text": "variable.region" },
+          { "id": "b", "text": "input.region" },
+          { "id": "c", "text": "var.region" },
+          { "id": "d", "text": "${region}" }
+        ],
+        "correctAnswers": ["c"],
+        "explanation": "Las variables de input se referencian con el prefijo var. La sintaxis correcta es var.region.",
+        "tags": ["variables"]
+      },
+      {
+        "id": "resources-modules-q002",
+        "type": "single-choice",
+        "question": "¿Cuál es la diferencia principal entre un `output` y un `local` en Terraform?",
+        "options": [
+          { "id": "a", "text": "Los outputs son visibles desde fuera del módulo; los locals son internos" },
+          { "id": "b", "text": "Los locals son más rápidos de calcular que los outputs" },
+          { "id": "c", "text": "Los outputs se guardan en el state; los locals no" },
+          { "id": "d", "text": "No hay diferencia, son equivalentes" }
+        ],
+        "correctAnswers": ["a"],
+        "explanation": "Los outputs exponen valores al exterior (se muestran tras apply, son accesibles desde módulos padre). Los locals son valores calculados internos, no accesibles desde fuera del módulo.",
+        "tags": ["outputs", "locals"]
+      },
+      {
+        "id": "resources-modules-q003",
+        "type": "single-choice",
+        "question": "¿Para qué se usa un `data source` en Terraform?",
+        "options": [
+          { "id": "a", "text": "Para crear recursos en el proveedor" },
+          { "id": "b", "text": "Para leer información de recursos existentes sin crearlos ni modificarlos" },
+          { "id": "c", "text": "Para almacenar el state de forma remota" },
+          { "id": "d", "text": "Para definir variables de entrada" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Los data sources permiten consultar información de recursos ya existentes. No crean, modifican ni destruyen recursos. Son de solo lectura.",
+        "tags": ["data-sources"]
+      },
+      {
+        "id": "resources-modules-q004",
+        "type": "multiple-choice",
+        "question": "¿Cuáles son formas válidas de pasar valores a variables de input en Terraform? (selecciona todas las correctas)",
+        "options": [
+          { "id": "a", "text": "Archivo terraform.tfvars" },
+          { "id": "b", "text": "Flag -var en la línea de comandos" },
+          { "id": "c", "text": "Variable de entorno TF_VAR_nombre" },
+          { "id": "d", "text": "Directamente en el bloque resource" },
+          { "id": "e", "text": "Archivo *.auto.tfvars" }
+        ],
+        "correctAnswers": ["a", "b", "c", "e"],
+        "explanation": "Las variables se pueden pasar por: terraform.tfvars (automático), *.auto.tfvars (automático), -var en CLI, TF_VAR_nombre como variable de entorno, o -var-file=archivo.tfvars.",
+        "tags": ["variables", "tfvars"]
+      },
+      {
+        "id": "resources-modules-q005",
+        "type": "single-choice",
+        "question": "¿Por qué `for_each` es generalmente preferible a `count` para crear múltiples recursos?",
+        "options": [
+          { "id": "a", "text": "for_each es más rápido de ejecutar" },
+          { "id": "b", "text": "for_each identifica recursos por clave estable, no por índice numérico" },
+          { "id": "c", "text": "count no está disponible en versiones recientes de Terraform" },
+          { "id": "d", "text": "for_each usa menos memoria" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Con count, eliminar un elemento de una lista renumera todos los posteriores causando recreaciones innecesarias. for_each usa claves string estables, solo afecta el elemento modificado.",
+        "tags": ["resources", "for_each"]
+      },
+      {
+        "id": "resources-modules-q006",
+        "type": "true-false",
+        "question": "Un módulo de Terraform puede tomar outputs de otro módulo como inputs.",
+        "options": [
+          { "id": "true", "text": "Verdadero" },
+          { "id": "false", "text": "Falso" }
+        ],
+        "correctAnswers": ["true"],
+        "explanation": "Los outputs de un módulo hijo son accesibles en el módulo padre como module.nombre_modulo.nombre_output. Así se compone la infraestructura entre módulos.",
+        "tags": ["modulos", "outputs"]
+      },
+      {
+        "id": "resources-modules-q007",
+        "type": "single-choice",
+        "question": "¿Cuándo es necesario usar `depends_on` en un resource?",
+        "options": [
+          { "id": "a", "text": "Siempre, para ser explícito sobre las dependencias" },
+          { "id": "b", "text": "Cuando hay una dependencia que no se puede expresar a través de referencias de valores" },
+          { "id": "c", "text": "Solo al usar módulos externos del Registry" },
+          { "id": "d", "text": "Cuando se usa count o for_each" }
+        ],
+        "correctAnswers": ["b"],
+        "explanation": "Terraform detecta automáticamente las dependencias cuando un recurso usa el valor de otro. depends_on solo es necesario para dependencias implícitas que no se expresan como referencias.",
+        "tags": ["resources", "dependencias"]
+      }
+    ]
+  }
+}
